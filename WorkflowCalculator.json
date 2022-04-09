@@ -1,0 +1,958 @@
+{
+  "name": "",
+  "displayName": "",
+  "description": "",
+  "author": "lampersky",
+  "website": "",
+  "version": "",
+  "issetuprecipe": false,
+  "categories": [],
+  "tags": [],
+  "variables": {
+    "CalculatorWorkflowTypeId": "[js:uuid()]",
+	  "CalculatorActivityTypeId": "[js:uuid()]",
+    "CalculatorHeavyTaskWaitForSignalWorkflowTypeId": "[js:uuid()]",
+	  "CalculatorHeavyTaskWaitForSignalActivityTypeId": "[js:uuid()]",
+    "CalculatorHighestCommonFactorWorkflowTypeId": "[js:uuid()]",
+	  "CalculatorHighestCommonFactorActivityTypeId": "[js:uuid()]",
+    "CalculatorLogicWorkflowTypeId": "[js:uuid()]",
+	  "CalculatorLogicActivityTypeId": "[js:uuid()]",
+    "CalculatorSumTermsRangeWorkflowTypeId": "[js:uuid()]",
+	  "CalculatorSumTermsRangeActivityTypeId": "[js:uuid()]"
+  },
+  "steps": [
+    {
+      "name": "WorkflowType",
+      "data": [
+	    {
+          "WorkflowTypeId": "[js: variables('CalculatorWorkflowTypeId')]",
+          "Name": "Calculator",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('CalculatorActivityTypeId')]",
+              "Name": "HttpRequestEvent",
+              "X": 10,
+              "Y": 0,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "StartingPoint"
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorWorkflowTypeId'), variables('CalculatorActivityTypeId'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "4yhwwz27tkgw47thazcsbya8mn",
+              "Name": "HttpResponseTask",
+              "X": 630,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 200,
+                "Content": {
+                  "Expression": "<html>\r\n<head>\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n\t<title>Orchard Core Workflow Calculator</title>\r\n    <link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css\" integrity=\"sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3\" crossorigin=\"anonymous\">\r\n\t<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js\" integrity=\"sha384-QJHtvGhmr9XOIpI6YVutG+2QOK9T+ZnN4kzFN1RtK3zEFEIsxhlmWl5/YESvpZ13\" crossorigin=\"anonymous\"></script>\r\n    <style>\r\n\tbody { height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #fff; color: #495057; margin: 0px; }\r\n\t#calc { display: flex; flex-direction: column; align-items: center; gap: 1em; }\r\n\t#app { font-weight: bold; }\r\n    .form-group { margin-bottom: 1rem; }\r\n\t</style>\r\n</head>\r\n<body>\r\n  <div id=\"calc\">\r\n  \t<img src=\"/OrchardCore.Admin/logo.png\">\r\n    <span id=\"app\">Simple calculator</span>\r\n    <form action=\"{{Workflow.Properties['url']}}\" method=\"post\">\r\n      <div id=\"Error\" class=\"alert alert-danger\" role=\"alert\"></div>\r\n      <div class=\"form-group\">\r\n        <label for=\"First_Number\">First number</label>\r\n        <input type=\"number\" class=\"form-control\" id=\"First_Number\" name=\"FirstNumber\" value=\"256\">\r\n        <span class=\"hint\"></span>\r\n      </div>\r\n      <div class=\"form-group\">\r\n        <label for=\"Second_Number\">Second number</label>\r\n        <input type=\"number\" class=\"form-control\" id=\"Second_Number\" name=\"SecondNumber\" value=\"128\">\r\n        <span class=\"hint\"></span>\r\n      </div>\r\n      <div class=\"form-group\">\r\n        <label for=\"Operation_Type\">Operation Type</label>\r\n        <select class=\"form-control\" id=\"Operation_Type\" name=\"OperationType\">\r\n          <option value=\"highest-common-factor\">Highest common factor</option>\r\n          <option value=\"sum-terms-range\">Sum Terms Range</option>\r\n          <option value=\"heavy-task-with-signal\">Heavy task with confirmation</option>\r\n        </select>\r\n        <span class=\"hint\"></span>\r\n      </div>\r\n      <div class=\"form-group\">\r\n        <button class=\"btn btn-primary save\" type=\"submit\">Calculate</button>\r\n      </div>\r\n      <div class=\"form-group\">\r\n        <label for=\"Result\">Result</label>\r\n        <input type=\"text\" class=\"form-control\" id=\"Result\" name=\"Result\" readonly>\r\n        <span id=\"Result_Hint\" class=\"hint\"><a id=\"Result_Link\" href=\"\">Are you really sure</a></span>\r\n      </div>\r\n    </form>\r\n  </div>\r\n  <script>\r\n    var urlParams = new URLSearchParams(window.location.search);\r\n    var token = urlParams.get('token');\r\n    var firstNumber = urlParams.get('firstNumber');\r\n    var secondNumber = urlParams.get('secondNumber');\r\n    var operationType = urlParams.get('operationType');\r\n    var result = urlParams.get('result') ?? '';\r\n    var isWorkflowTriggerUrl = result.startsWith('/workflows/Trigger');\r\n    var error = urlParams.get('error');\r\n    document.getElementById('First_Number').value = firstNumber;\r\n    document.getElementById('Second_Number').value = secondNumber;\r\n    document.getElementById('Operation_Type').value = operationType;\r\n    document.getElementById('Result').value = isWorkflowTriggerUrl ? '' : result;\r\n    document.getElementById('Error').innerText = error;\r\n    document.getElementById('Error').style.display = error ? 'flex' : 'none';\r\n    document.getElementById('Result_Hint').style.display = isWorkflowTriggerUrl ? 'flex' : 'none';\r\n    document.getElementById('Result_Link').href = isWorkflowTriggerUrl ? result : '#';\r\n  </script>\r\n</body>\r\n</html>"
+                },
+                "ContentType": {
+                  "Expression": "text/html"
+                },
+                "Headers": {
+                  "Expression": "content-type: text/html; charset=utf-8"
+                }
+              }
+            },
+            {
+              "ActivityId": "4p1v95yxgxs1c44xj2mjjtf0w0",
+              "Name": "SetPropertyTask",
+              "X": 260,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "url",
+                "Value": {
+                  "Expression": "[js: '\"' + getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorLogicWorkflowTypeId'), variables('CalculatorLogicActivityTypeId')))) + '\"' ]"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('CalculatorActivityTypeId')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4p1v95yxgxs1c44xj2mjjtf0w0"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4p1v95yxgxs1c44xj2mjjtf0w0",				   
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4yhwwz27tkgw47thazcsbya8mn"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "[js: variables('CalculatorLogicWorkflowTypeId')]",
+          "Name": "CalculatorLogic",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('CalculatorLogicActivityTypeId')]",
+              "Name": "HttpRequestEvent",
+              "X": 10,
+              "Y": 10,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "StartingPoint"
+                },
+                "HttpMethod": "POST",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorLogicWorkflowTypeId'), variables('CalculatorLogicActivityTypeId'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "49j2svzwzhy5pzwszpqpkw4d47",
+              "Name": "SetPropertyTask",
+              "X": 250,
+              "Y": 20,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "formBody",
+                "Value": {
+                  "Expression": "deserializeRequestData()"
+                }
+              }
+            },
+            {
+              "ActivityId": "4e8gbkxrr16ra7pcamf8rj4hc2",
+              "Name": "IfElseTask",
+              "X": 560,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "is \"highest-common-factor\" operation?"
+                },
+                "Condition": {
+                  "Expression": "property('formBody').OperationType == 'highest-common-factor'"
+                }
+              }
+            },
+            {
+              "ActivityId": "4c5y8d35x16wyzemkdct3xa1ds",
+              "Name": "IfElseTask",
+              "X": 560,
+              "Y": 190,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "is \"sum-terms-range\" operation?"
+                },
+                "Condition": {
+                  "Expression": "property('formBody').OperationType == 'sum-terms-range'"
+                }
+              }
+            },
+            {
+              "ActivityId": "44gfe8banmpgb56tnr04pvpa43",
+              "Name": "IfElseTask",
+              "X": 560,
+              "Y": 360,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "is \"heavy-task-with-signal\" operation?"
+                },
+                "Condition": {
+                  "Expression": "property('formBody').OperationType == 'heavy-task-with-signal'"
+                }
+              }
+            },
+            {
+              "ActivityId": "4fe8qfeh3kwxh3sgng8k56rw5t",
+              "Name": "HttpRedirectTask",
+              "X": 1050,
+              "Y": 20,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "redirect to \"highest-common-factor\""
+                },
+                "Location": {
+                  "Expression": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorHighestCommonFactorWorkflowTypeId'), variables('CalculatorHighestCommonFactorActivityTypeId'))) + '&firstNumber={{Workflow.Properties[\"formBody\"].FirstNumber}}&secondNumber={{Workflow.Properties[\"formBody\"].SecondNumber}}&operationType={{Workflow.Properties[\"formBody\"].OperationType}}&result={{Workflow.Properties[\"formBody\"].Result}}')]"
+                },
+                "Permanent": false
+              }
+            },
+            {
+              "ActivityId": "4h3mgxe34dk2ar1ffjz34mgbdp",
+              "Name": "HttpRedirectTask",
+              "X": 1050,
+              "Y": 190,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Location": {
+                  "Expression": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorSumTermsRangeWorkflowTypeId'), variables('CalculatorSumTermsRangeActivityTypeId'))) + '&firstNumber={{Workflow.Properties[\"formBody\"].FirstNumber}}&secondNumber={{Workflow.Properties[\"formBody\"].SecondNumber}}&operationType={{Workflow.Properties[\"formBody\"].OperationType}}&result={{Workflow.Properties[\"formBody\"].Result}}')]"
+                },
+                "Permanent": false
+              }
+            },
+            {
+              "ActivityId": "4dj12v63q6yf154q7tb5s6wtc0",
+              "Name": "HttpRedirectTask",
+              "X": 1050,
+              "Y": 350,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Location": {
+                  "Expression": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorHeavyTaskWaitForSignalWorkflowTypeId'), variables('CalculatorHeavyTaskWaitForSignalActivityTypeId'))) + '&firstNumber={{Workflow.Properties[\"formBody\"].FirstNumber}}&secondNumber={{Workflow.Properties[\"formBody\"].SecondNumber}}&operationType={{Workflow.Properties[\"formBody\"].OperationType}}&result={{Workflow.Properties[\"formBody\"].Result}}')]"
+                },
+                "Permanent": false
+              }
+            },
+            {
+              "ActivityId": "421wv43rpk5e230ng46j3gshmp",
+              "Name": "HttpRedirectTask",
+              "X": 1050,
+              "Y": 510,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Redirect to Calculator"
+                },
+                "Location": {
+                  "Expression": 
+				 "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorWorkflowTypeId'), variables('CalculatorActivityTypeId'))) + '&firstNumber={{Workflow.Properties[\"formBody\"].FirstNumber}}&secondNumber={{Workflow.Properties[\"formBody\"].SecondNumber}}&operationType={{Workflow.Properties[\"formBody\"].OperationType}}&result={{Workflow.Properties[\"formBody\"].Result}}&error=Invalid%20operation%20type')]" 
+                },
+                "Permanent": false
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('CalculatorLogicActivityTypeId')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "49j2svzwzhy5pzwszpqpkw4d47"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "49j2svzwzhy5pzwszpqpkw4d47",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4e8gbkxrr16ra7pcamf8rj4hc2"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4e8gbkxrr16ra7pcamf8rj4hc2",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "4c5y8d35x16wyzemkdct3xa1ds"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4c5y8d35x16wyzemkdct3xa1ds",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "44gfe8banmpgb56tnr04pvpa43"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4e8gbkxrr16ra7pcamf8rj4hc2",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "4fe8qfeh3kwxh3sgng8k56rw5t"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4c5y8d35x16wyzemkdct3xa1ds",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "4h3mgxe34dk2ar1ffjz34mgbdp"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "44gfe8banmpgb56tnr04pvpa43",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "4dj12v63q6yf154q7tb5s6wtc0"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "44gfe8banmpgb56tnr04pvpa43",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "421wv43rpk5e230ng46j3gshmp"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "[js: variables('CalculatorHighestCommonFactorWorkflowTypeId')]",
+          "Name": "CalculatorHighestCommonFactor",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('CalculatorHighestCommonFactorActivityTypeId')]",
+              "Name": "HttpRequestEvent",
+              "X": 0,
+              "Y": 0,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "StartingPoint"
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorHighestCommonFactorWorkflowTypeId'), variables('CalculatorHighestCommonFactorActivityTypeId'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "4vrkek9c5mdxr019jbk80wz6ns",
+              "Name": "SetPropertyTask",
+              "X": 230,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "firstNumber",
+                "Value": {
+                  "Expression": "parseInt(queryString('firstNumber'))"
+                }
+              }
+            },
+            {
+              "ActivityId": "4e66nt512tg0hxqcgdc1eave4d",
+              "Name": "SetPropertyTask",
+              "X": 550,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "secondNumber",
+                "Value": {
+                  "Expression": "parseInt(queryString('secondNumber'))"
+                }
+              }
+            },
+            {
+              "ActivityId": "4hjx042n4wr0g6jvkt2kjyz0xp",
+              "Name": "WhileLoopTask",
+              "X": 890,
+              "Y": 560,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Condition": {
+                  "Expression": "property('a') != property('b')"
+                }
+              }
+            },
+            {
+              "ActivityId": "4kqqe59zm0va2rfh8tss9vksce",
+              "Name": "ScriptTask",
+              "X": 30,
+              "Y": 490,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "AvailableOutcomes": [
+                  "FirstNumberIsGreatestOrEqual",
+                  "SecondNumberIsGreatest"
+                ],
+                "Script": {
+                  "Expression": "if(property('a') >= property('b')) {\r\n  setOutcome('FirstNumberIsGreatestOrEqual');\r\n}\r\nelse {\r\n\tsetOutcome('SecondNumberIsGreatest');\r\n}"
+                }
+              }
+            },
+            {
+              "ActivityId": "4h70gwndv7pckrfgkdpzd7eccb",
+              "Name": "SetPropertyTask",
+              "X": 380,
+              "Y": 410,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "a",
+                "Value": {
+                  "Expression": "property('a') - property('b')"
+                }
+              }
+            },
+            {
+              "ActivityId": "4w4m898dr4ypd1cbrza53st5n5",
+              "Name": "SetPropertyTask",
+              "X": 340,
+              "Y": 210,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "b",
+                "Value": {
+                  "Expression": "property('b') - property('a')"
+                }
+              }
+            },
+            {
+              "ActivityId": "4qv81nh7sadav3x3rmqz29khnr",
+              "Name": "HttpRedirectTask",
+              "X": 1260,
+              "Y": 560,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Location": {
+                  "Expression": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorWorkflowTypeId'), variables('CalculatorActivityTypeId'))) + '&firstNumber={{Workflow.Properties[\"firstNumber\"]}}&secondNumber={{Workflow.Properties[\"secondNumber\"]}}&result={{Workflow.Properties[\"a\"]}}&operationType={{Workflow.Properties[\"operationType\"]}}')]"
+                },
+                "Permanent": false
+              }
+            },
+            {
+              "ActivityId": "45ftmyvqyxfrstyaja2b50aemq",
+              "Name": "SetPropertyTask",
+              "X": 900,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "operationType",
+                "Value": {
+                  "Expression": "queryString('operationType')"
+                }
+              }
+            },
+            {
+              "ActivityId": "475n4ztjdza5msxcqxnbp14kxe",
+              "Name": "SetPropertyTask",
+              "X": 950,
+              "Y": 190,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "a"
+                },
+                "PropertyName": "a",
+                "Value": {
+                  "Expression": "property('firstNumber')"
+                }
+              }
+            },
+            {
+              "ActivityId": "4wkgr4cz25x20s7bkdtexsjkcc",
+              "Name": "SetPropertyTask",
+              "X": 940,
+              "Y": 360,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "b"
+                },
+                "PropertyName": "b",
+                "Value": {
+                  "Expression": "property('secondNumber')"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('CalculatorHighestCommonFactorActivityTypeId')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4vrkek9c5mdxr019jbk80wz6ns"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4vrkek9c5mdxr019jbk80wz6ns",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4e66nt512tg0hxqcgdc1eave4d"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4hjx042n4wr0g6jvkt2kjyz0xp",
+              "SourceOutcomeName": "Iterate",
+              "DestinationActivityId": "4kqqe59zm0va2rfh8tss9vksce"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4kqqe59zm0va2rfh8tss9vksce",
+              "SourceOutcomeName": "FirstNumberIsGreatestOrEqual",
+              "DestinationActivityId": "4h70gwndv7pckrfgkdpzd7eccb"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4h70gwndv7pckrfgkdpzd7eccb",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4hjx042n4wr0g6jvkt2kjyz0xp"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4kqqe59zm0va2rfh8tss9vksce",
+              "SourceOutcomeName": "SecondNumberIsGreatest",
+              "DestinationActivityId": "4w4m898dr4ypd1cbrza53st5n5"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4w4m898dr4ypd1cbrza53st5n5",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4hjx042n4wr0g6jvkt2kjyz0xp"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4hjx042n4wr0g6jvkt2kjyz0xp",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4qv81nh7sadav3x3rmqz29khnr"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4e66nt512tg0hxqcgdc1eave4d",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "45ftmyvqyxfrstyaja2b50aemq"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "45ftmyvqyxfrstyaja2b50aemq",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "475n4ztjdza5msxcqxnbp14kxe"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "475n4ztjdza5msxcqxnbp14kxe",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4wkgr4cz25x20s7bkdtexsjkcc"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4wkgr4cz25x20s7bkdtexsjkcc",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4hjx042n4wr0g6jvkt2kjyz0xp"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "[js: variables('CalculatorSumTermsRangeWorkflowTypeId')]",
+          "Name": "CalculatorSumTermsRange",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('CalculatorSumTermsRangeActivityTypeId')]",
+              "Name": "HttpRequestEvent",
+              "X": 0,
+              "Y": 0,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "StartingPoint"
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorSumTermsRangeWorkflowTypeId'), variables('CalculatorSumTermsRangeActivityTypeId'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "4vrkek9c5mdxr019jbk80wz6ns",
+              "Name": "SetPropertyTask",
+              "X": 230,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "firstNumber",
+                "Value": {
+                  "Expression": "parseInt(queryString('firstNumber'))"
+                }
+              }
+            },
+            {
+              "ActivityId": "4e66nt512tg0hxqcgdc1eave4d",
+              "Name": "SetPropertyTask",
+              "X": 550,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "secondNumber",
+                "Value": {
+                  "Expression": "parseInt(queryString('secondNumber'))"
+                }
+              }
+            },
+            {
+              "ActivityId": "4qv81nh7sadav3x3rmqz29khnr",
+              "Name": "HttpRedirectTask",
+              "X": 1070,
+              "Y": 470,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Location": {
+                  "Expression": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorWorkflowTypeId'), variables('CalculatorActivityTypeId'))) + '&firstNumber={{Workflow.Properties[\"firstNumber\"]}}&secondNumber={{Workflow.Properties[\"secondNumber\"]}}&result={{Workflow.Properties[\"result\"]}}&operationType={{Workflow.Properties[\"operationType\"]}}')]"
+                },
+                "Permanent": false
+              }
+            },
+            {
+              "ActivityId": "45ftmyvqyxfrstyaja2b50aemq",
+              "Name": "SetPropertyTask",
+              "X": 900,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "operationType",
+                "Value": {
+                  "Expression": "queryString('operationType')"
+                }
+              }
+            },
+            {
+              "ActivityId": "475n4ztjdza5msxcqxnbp14kxe",
+              "Name": "SetPropertyTask",
+              "X": 950,
+              "Y": 190,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "init result"
+                },
+                "PropertyName": "result",
+                "Value": {
+                  "Expression": "parseInt('0')"
+                }
+              }
+            },
+            {
+              "ActivityId": "4hkyp7ke0sfzewv0gvf3e45y5c",
+              "Name": "ForLoopTask",
+              "X": 490,
+              "Y": 460,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "From": {
+                  "Expression": "property('firstNumber') < property('secondNumber') ? property('firstNumber') : property('secondNumber')"
+                },
+                "To": {
+                  "Expression": "property('secondNumber') > property('firstNumber') ? property('secondNumber') : property('firstNumber')"
+                },
+                "Step": {
+                  "Expression": "1"
+                },
+                "LoopVariableName": "x"
+              }
+            },
+            {
+              "ActivityId": "4qf4qb28t9rjy0rshq31kyzmcb",
+              "Name": "SetPropertyTask",
+              "X": 490,
+              "Y": 240,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "result",
+                "Value": {
+                  "Expression": "property('result') + property('x')"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('CalculatorSumTermsRangeActivityTypeId')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4vrkek9c5mdxr019jbk80wz6ns"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4vrkek9c5mdxr019jbk80wz6ns",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4e66nt512tg0hxqcgdc1eave4d"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4e66nt512tg0hxqcgdc1eave4d",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "45ftmyvqyxfrstyaja2b50aemq"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "45ftmyvqyxfrstyaja2b50aemq",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "475n4ztjdza5msxcqxnbp14kxe"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4hkyp7ke0sfzewv0gvf3e45y5c",
+              "SourceOutcomeName": "Iterate",
+              "DestinationActivityId": "4qf4qb28t9rjy0rshq31kyzmcb"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "475n4ztjdza5msxcqxnbp14kxe",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4hkyp7ke0sfzewv0gvf3e45y5c"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4hkyp7ke0sfzewv0gvf3e45y5c",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4qv81nh7sadav3x3rmqz29khnr"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4qf4qb28t9rjy0rshq31kyzmcb",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4hkyp7ke0sfzewv0gvf3e45y5c"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "[js: variables('CalculatorHeavyTaskWaitForSignalWorkflowTypeId')]",
+          "Name": "CalculatorHeavyTaskWaitForSignal",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('CalculatorHeavyTaskWaitForSignalActivityTypeId')]",
+              "Name": "HttpRequestEvent",
+              "X": 0,
+              "Y": 0,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "StartingPoint"
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorHeavyTaskWaitForSignalWorkflowTypeId'), variables('CalculatorHeavyTaskWaitForSignalActivityTypeId'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "4vrkek9c5mdxr019jbk80wz6ns",
+              "Name": "SetPropertyTask",
+              "X": 240,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "firstNumber",
+                "Value": {
+                  "Expression": "parseInt(queryString('firstNumber'))"
+                }
+              }
+            },
+            {
+              "ActivityId": "4e66nt512tg0hxqcgdc1eave4d",
+              "Name": "SetPropertyTask",
+              "X": 570,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "secondNumber",
+                "Value": {
+                  "Expression": "parseInt(queryString('secondNumber'))"
+                }
+              }
+            },
+            {
+              "ActivityId": "4qv81nh7sadav3x3rmqz29khnr",
+              "Name": "HttpRedirectTask",
+              "X": 920,
+              "Y": 420,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Location": {
+                  "Expression": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('CalculatorWorkflowTypeId'), variables('CalculatorActivityTypeId'))) + '&firstNumber={{Workflow.Properties[\"firstNumber\"]}}&secondNumber={{Workflow.Properties[\"secondNumber\"]}}&result={{Workflow.Properties[\"result\"]}}&operationType={{Workflow.Properties[\"operationType\"]}}')]"
+                },
+                "Permanent": false
+              }
+            },
+            {
+              "ActivityId": "45ftmyvqyxfrstyaja2b50aemq",
+              "Name": "SetPropertyTask",
+              "X": 940,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "operationType",
+                "Value": {
+                  "Expression": "queryString('operationType')"
+                }
+              }
+            },
+            {
+              "ActivityId": "475n4ztjdza5msxcqxnbp14kxe",
+              "Name": "SetPropertyTask",
+              "X": 950,
+              "Y": 200,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "init result"
+                },
+                "PropertyName": "result",
+                "Value": {
+                  "Expression": "signalUrl('continue-heavy-calculation')"
+                }
+              }
+            },
+            {
+              "ActivityId": "42prnt5cvpd8dy4c83apcfw7dh",
+              "Name": "SignalEvent",
+              "X": 150,
+              "Y": 410,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "SignalName": {
+                  "Expression": "continue-heavy-calculation"
+                }
+              }
+            },
+            {
+              "ActivityId": "4e93nwfc5xckzvd7v77h7mhnn6",
+              "Name": "SetPropertyTask",
+              "X": 510,
+              "Y": 190,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "result",
+                "Value": {
+                  "Expression": "property('firstNumber') + property('secondNumber')"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('CalculatorHeavyTaskWaitForSignalActivityTypeId')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4vrkek9c5mdxr019jbk80wz6ns"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4vrkek9c5mdxr019jbk80wz6ns",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4e66nt512tg0hxqcgdc1eave4d"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4e66nt512tg0hxqcgdc1eave4d",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "45ftmyvqyxfrstyaja2b50aemq"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "45ftmyvqyxfrstyaja2b50aemq",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "475n4ztjdza5msxcqxnbp14kxe"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "475n4ztjdza5msxcqxnbp14kxe",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4qv81nh7sadav3x3rmqz29khnr"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "42prnt5cvpd8dy4c83apcfw7dh",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4e93nwfc5xckzvd7v77h7mhnn6"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4qv81nh7sadav3x3rmqz29khnr",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "42prnt5cvpd8dy4c83apcfw7dh"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4e93nwfc5xckzvd7v77h7mhnn6",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4qv81nh7sadav3x3rmqz29khnr"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
