@@ -44,3 +44,20 @@ Events and tasks used:
 - while loop,
 - for Loop,
 - If/Else.
+
+## Analog Clock
+
+Requirements:
+- users can generate analog clock face with current server time.
+
+https://youtu.be/2InmwPLkv-Q
+
+[![analogClock](https://user-images.githubusercontent.com/6403130/162595393-79a73166-8128-4f87-a6f2-c3c1298a5080.png)](https://www.youtube.com/watch?v=2InmwPLkv-Q)
+
+Events and tasks used:
+- handle incoming HTTP request,
+- set property,
+- HTTP response,
+- Fork,
+- Join.
+
