@@ -1,0 +1,346 @@
+{
+  "name": "",
+  "displayName": "",
+  "description": "",
+  "author": "lampersky",
+  "website": "",
+  "version": "",
+  "issetuprecipe": false,
+  "categories": [],
+  "tags": [],
+  "variables": {
+    "AnalogClockSVGWorkflowTypeId": "[js:uuid()]",
+    "AnalogClockSVGActivityTypeId": "[js:uuid()]",
+    "AnalogClockWorkflowTypeId": "[js:uuid()]",
+    "AnalogClockActivityTypeId": "[js:uuid()]",
+  },
+  "steps": [
+    {
+      "name": "WorkflowType",
+      "data": [
+        {
+          "WorkflowTypeId": "[js: variables('AnalogClockSVGWorkflowTypeId')]",
+          "Name": "AnalogClockSVG",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('AnalogClockSVGActivityTypeId')]",
+              "Name": "HttpRequestEvent",
+              "X": 0,
+              "Y": 0,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('AnalogClockSVGWorkflowTypeId'), variables('AnalogClockSVGActivityTypeId'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "4t65e2zbs1gas0w1ad10w30ncx",
+              "Name": "HttpResponseTask",
+              "X": 1200,
+              "Y": 370,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 200,
+                "Content": {
+                  "Expression": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<svg width=\"301px\" height=\"301px\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\r\n\t<line x1=\"150\" y1=\"150\" x2=\"150\" y2=\"5\" stroke=\"blue\" stroke-width=\"6\" transform=\"rotate({{Workflow.Properties['hours']}} 150 150)\" my-attr=\"{{Workflow.Properties['hours']}}\"></line>\r\n\t<line x1=\"150\" y1=\"150\" x2=\"150\" y2=\"25\" stroke=\"red\" stroke-width=\"3\" transform=\"rotate({{Workflow.Properties['minutes']}} 150 150)\" my-attr=\"{{Workflow.Properties['minutes']}}\"></line>\r\n  \t<line x1=\"150\" y1=\"150\" x2=\"150\" y2=\"50\" stroke=\"green\" stroke-width=\"1\" transform=\"rotate({{Workflow.Properties['seconds']}} 150 150)\" my-attr=\"{{Workflow.Properties['seconds']}}\"></line>\r\n    <ellipse cx=\"150\" cy=\"150\" rx=\"149\" ry=\"149\" stroke=\"black\" stroke-width=\"2\" fill=\"none\"></ellipse>\r\n</svg>"
+                },
+                "ContentType": {
+                  "Expression": "image/svg+xml"
+                },
+                "Headers": {
+                  "Expression": "content-type: image/svg+xml"
+                }
+              }
+            },
+            {
+              "ActivityId": "40y5ryk3h1nq77gdtyqn64fhw2",
+              "Name": "SetPropertyTask",
+              "X": 20,
+              "Y": 190,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "currentTime",
+                "Value": {
+                  "Expression": "new Date()"
+                }
+              }
+            },
+            {
+              "ActivityId": "4er49n3n0k7ent0j7bx7h22vw6",
+              "Name": "ForkTask",
+              "X": 10,
+              "Y": 370,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Forks": [
+                  "hours",
+                  "minutes",
+                  "seconds"
+                ]
+              }
+            },
+            {
+              "ActivityId": "4rfxdj5z2amxz5e6f46bv6a6n0",
+              "Name": "SetPropertyTask",
+              "X": 360,
+              "Y": 230,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "calculate hour hand angle"
+                },
+                "PropertyName": "hours",
+                "Value": {
+                  "Expression": "(property('currentTime').getHours() % 12) * 30"
+                }
+              }
+            },
+            {
+              "ActivityId": "49vcksgqsxws6447nm7gfjkgma",
+              "Name": "SetPropertyTask",
+              "X": 370,
+              "Y": 370,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "calculate minute hand angle"
+                },
+                "PropertyName": "minutes",
+                "Value": {
+                  "Expression": "property('currentTime').getMinutes() * 6"
+                }
+              }
+            },
+            {
+              "ActivityId": "4d7adhpw6ayd462xzneef02gwc",
+              "Name": "SetPropertyTask",
+              "X": 370,
+              "Y": 470,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "calculate second hand angle"
+                },
+                "PropertyName": "seconds",
+                "Value": {
+                  "Expression": "property('currentTime').getSeconds() * 6"
+                }
+              }
+            },
+            {
+              "ActivityId": "4xjxq14tp1aafrxajsacxx5tmg",
+              "Name": "JoinTask",
+              "X": 730,
+              "Y": 370,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Mode": 0
+              }
+            },
+            {
+              "ActivityId": "4v9b0vsw0h86j5t33x74qem65m",
+              "Name": "SetPropertyTask",
+              "X": 740,
+              "Y": 200,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "minutes hand correction"
+                },
+                "PropertyName": "minutes",
+                "Value": {
+                  "Expression": "property('minutes') + (property('seconds') / 60)"
+                }
+              }
+            },
+            {
+              "ActivityId": "4ff7hqsv3sbzw61n3fcdw38pxz",
+              "Name": "SetPropertyTask",
+              "X": 1120,
+              "Y": 190,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "hour hand correction"
+                },
+                "PropertyName": "hours",
+                "Value": {
+                  "Expression": "property('hours') + ((property('minutes') + (property('minutes') / 60)) / 60)"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "40y5ryk3h1nq77gdtyqn64fhw2",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4er49n3n0k7ent0j7bx7h22vw6"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4er49n3n0k7ent0j7bx7h22vw6",
+              "SourceOutcomeName": "hours",
+              "DestinationActivityId": "4rfxdj5z2amxz5e6f46bv6a6n0"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4er49n3n0k7ent0j7bx7h22vw6",
+              "SourceOutcomeName": "minutes",
+              "DestinationActivityId": "49vcksgqsxws6447nm7gfjkgma"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4er49n3n0k7ent0j7bx7h22vw6",
+              "SourceOutcomeName": "seconds",
+              "DestinationActivityId": "4d7adhpw6ayd462xzneef02gwc"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4rfxdj5z2amxz5e6f46bv6a6n0",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4xjxq14tp1aafrxajsacxx5tmg"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "49vcksgqsxws6447nm7gfjkgma",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4xjxq14tp1aafrxajsacxx5tmg"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4d7adhpw6ayd462xzneef02gwc",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4xjxq14tp1aafrxajsacxx5tmg"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4xjxq14tp1aafrxajsacxx5tmg",
+              "SourceOutcomeName": "Joined",
+              "DestinationActivityId": "4v9b0vsw0h86j5t33x74qem65m"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4v9b0vsw0h86j5t33x74qem65m",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4ff7hqsv3sbzw61n3fcdw38pxz"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4ff7hqsv3sbzw61n3fcdw38pxz",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4t65e2zbs1gas0w1ad10w30ncx"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('AnalogClockSVGActivityTypeId')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "40y5ryk3h1nq77gdtyqn64fhw2"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "[js: variables('AnalogClockWorkflowTypeId')]",
+          "Name": "AnalogClock",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('AnalogClockActivityTypeId')]",
+              "Name": "HttpRequestEvent",
+              "X": 0,
+              "Y": 10,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('AnalogClockWorkflowTypeId'), variables('AnalogClockActivityTypeId'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "401aem4hgxj7qse4rhjrdekxwx",
+              "Name": "SetPropertyTask",
+              "X": 410,
+              "Y": 20,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "imageUrl",
+                "Value": {
+                  "Expression": "[js: `'` + getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('AnalogClockSVGWorkflowTypeId'), variables('AnalogClockSVGActivityTypeId')))) + `'`]"
+                }
+              }
+            },
+            {
+              "ActivityId": "46z8aaswzhwat3hs8fvaqt9r4x",
+              "Name": "HttpResponseTask",
+              "X": 800,
+              "Y": 20,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 200,
+                "Content": {
+                  "Expression": "<html>\r\n<head>\r\n\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\r\n\t<title>Orchard Core Workflow Analog Clock</title>\r\n    <style>\r\n\tbody { height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; background-color: #fff; color: #495057; margin: 0px; }\r\n\t</style>\r\n</head>\r\n<body>\r\n  <img id=\"analogClock\" src=\"{{Workflow.Properties['imageUrl']}}\">\r\n  <script>\r\n    function refreshImage() {\r\n\t\tdocument.getElementById('analogClock').src = \"{{Workflow.Properties['imageUrl']}}&v=\" + new Date().getTime();\r\n    }\r\n    window.addEventListener('load', function () {\r\n    \tsetInterval(refreshImage, 1000);\r\n    });\r\n  </script>\r\n</body>\r\n</html>"
+                },
+                "ContentType": {
+                  "Expression": "text/html"
+                },
+                "Headers": {
+                  "Expression": null
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('AnalogClockActivityTypeId')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "401aem4hgxj7qse4rhjrdekxwx"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "401aem4hgxj7qse4rhjrdekxwx",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "46z8aaswzhwat3hs8fvaqt9r4x"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
