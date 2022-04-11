@@ -61,3 +61,27 @@ Events and tasks used:
 - Fork,
 - Join.
 
+## simple blog
+
+Requirements:
+- build very simple blog and get some posts from the Internet,
+- do not save already existing posts again,
+- automatically check if there are new posts every 12h.
+
+https://youtu.be/ECBQLhbzLJQ
+
+[![dotnetBlog](https://user-images.githubusercontent.com/6403130/162836704-95f52216-e29b-4168-9338-dc5e9ba1b0f7.png)](https://www.youtube.com/watch?v=ECBQLhbzLJQ)
+
+Events and tasks used:
+- handle incoming HTTP request,
+- timer event,
+- script,
+- set property,
+- for each,
+- log,
+- HTTP response.
+
+Other:
+- creating new content item via scripting,
+- executing some custom SQL queries via scripting,
+- web scraping is done using regex.
