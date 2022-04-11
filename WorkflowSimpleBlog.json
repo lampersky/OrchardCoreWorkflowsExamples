@@ -1,0 +1,634 @@
+{
+  "name": "",
+  "displayName": "",
+  "description": "",
+  "author": "lampersky",
+  "website": "",
+  "version": "",
+  "issetuprecipe": false,
+  "categories": [],
+  "tags": [],
+  "variables": {
+	"HomePageContentItemId": "[js:uuid()]",
+	"Blog_Workflow": "[js:uuid()]",
+	"Blog_Activity": "[js:uuid()]",
+	"now": "[js: new Date().toISOString()]"
+  },
+  "steps": [
+    {
+      "name": "Feature",
+      "enable": [
+        "Application.Default",
+        "OrchardCore.Cms.Web",
+        "OrchardCore.Settings",
+        "OrchardCore.Admin",
+        "OrchardCore.Liquid",
+        "OrchardCore.Contents",
+        "OrchardCore.ContentTypes",
+        "OrchardCore.Templates",
+        "OrchardCore.Alias",
+        "OrchardCore.Apis.GraphQL",
+        "OrchardCore.Autoroute",
+        "OrchardCore.Resources",
+        "OrchardCore.Features",
+        "OrchardCore.Scripting",
+        "OrchardCore.Recipes",
+        "OrchardCore.Shortcodes",
+        "OrchardCore.ContentFields",
+        "OrchardCore.ContentFields.Indexing.SQL",
+        "OrchardCore.Users",
+        "OrchardCore.Localization",
+        "OrchardCore.ContentLocalization",
+        "OrchardCore.ContentLocalization.ContentCulturePicker",
+        "OrchardCore.ContentPreview",
+        "OrchardCore.Deployment",
+        "OrchardCore.Contents.FileContentDefinition",
+        "OrchardCore.CustomSettings",
+        "OrchardCore.Deployment.Remote",
+        "OrchardCore.Diagnostics",
+        "OrchardCore.DynamicCache",
+        "OrchardCore.Email",
+        "OrchardCore.Widgets",
+        "OrchardCore.Feeds",
+        "OrchardCore.Flows",
+        "OrchardCore.HomeRoute",
+        "OrchardCore.Html",
+        "OrchardCore.Indexing",
+        "OrchardCore.Rules",
+        "OrchardCore.Layers",
+        "OrchardCore.Lists",
+        "OrchardCore.Markdown",
+        "OrchardCore.Media",
+        "OrchardCore.Media.Cache",
+        "OrchardCore.Media.Azure.Storage",
+        "OrchardCore.Title",
+        "OrchardCore.Menu",
+        "OrchardCore.Navigation",
+        "OrchardCore.Queries",
+        "OrchardCore.Queries.Sql",
+        "OrchardCore.Redis",
+        "OrchardCore.Redis.Cache",
+        "OrchardCore.Roles",
+        "OrchardCore.Shortcodes.Templates",
+        "OrchardCore.Themes",
+        "OrchardCore.Users.ResetPassword",
+        "OrchardCore.Workflows",
+        "OrchardCore.Workflows.Http",
+        "OrchardCore.Workflows.Timers",
+        "TheAdmin",
+        "TheTheme"
+      ]
+    },
+    {
+      "name": "WorkflowType",
+      "data": [
+        {
+          "WorkflowTypeId": "[js: variables('Blog_Workflow')]",
+          "Name": "Blog",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('Blog_Activity')]",
+              "Name": "HttpRequestEvent",
+              "X": 30,
+              "Y": 0,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('Blog_Workflow'), variables('Blog_Activity'))))]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "4cb041jycjxbktg1fe8qcabnd7",
+              "Name": "HttpRequestTask",
+              "X": 230,
+              "Y": 200,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Url": {
+                  "Expression": "{{ Workflow.Properties['dotnetBlogUrl'] | raw }}"
+                },
+                "HttpMethod": "GET",
+                "Body": {
+                  "Expression": null
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                },
+                "HttpResponseCodes": "200"
+              }
+            },
+            {
+              "ActivityId": "4yn8z6g5thv7jvpnvwch1jr7xq",
+              "Name": "SetPropertyTask",
+              "X": 20,
+              "Y": 310,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "PropertyName": "responseBody",
+                "Value": {
+                  "Expression": "lastResult().Body"
+                }
+              }
+            },
+            {
+              "ActivityId": "4xgbxr67xkxgp47wzfemng4m59",
+              "Name": "ScriptTask",
+              "X": 410,
+              "Y": 310,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "extract articles"
+                },
+                "AvailableOutcomes": [
+                  "Done"
+                ],
+                "Script": {
+                  "Expression": "const articleRegex = /<article[^>]*>((?:.|\\s)*?)<\\/article>/gm\r\nconst htmlArticles = property('responseBody').match(articleRegex);\r\n\r\nconst idRegex = /id=\"post-([^\"]*)\"/m\r\nconst imageRegex = /<img .+?(?=src)src=\"([^\"]*)\".+?(?=data-src)data-src=\"([^\"]*)\".+?(?=alt)alt=\"([^\"]*)\"/m\r\nconst timeRegex = /<time .+?(?=datetime)datetime=\"([^\"]*)\">([^<]*)<\\/time>/m\r\nconst authorRegex = /<span class=\"author vcard\"><a .+?(?=href)href=\"([^\"]*)\">([^<]*)<\\/a><\\/span>/m\r\nconst titleLinkRegex = /<h5 class=\"entry-title\"><a href=\"([^\"]*)\" rel=\"bookmark\"[^>]*>(.*?)<\\/a>/m\r\nconst descRegex = /<!-- .entry-header -->([^<]*)/m\r\n\r\nvar result = [];\r\nconst defaults = ['', 'unknown', 'unknown', 'unknown'];\r\nfor (var htmlArticle of htmlArticles) {\r\n    var idGroup = htmlArticle.match(idRegex);\r\n    if (!idGroup) {\r\n        continue;\r\n    }\r\n    var imageGroup = (htmlArticle.match(imageRegex)) ?? defaults;\r\n    var timeGroup = (htmlArticle.match(timeRegex)) ?? defaults;\r\n    var authorGroup = (htmlArticle.match(authorRegex)) ?? defaults;\r\n    var titleLinkGroup = (htmlArticle.match(titleLinkRegex)) ?? defaults;\r\n    var descGroup = (htmlArticle.match(descRegex)) ?? defaults;\r\n    result.push(\r\n        {\r\n            \"Id\" : idGroup[1],\r\n            \"ContentItemId\" : idGroup[1].padStart(26, '0'),\r\n            \"Image1\" : imageGroup[1].trim(),\r\n            \"ImageUrl\" : imageGroup[2].trim(),\r\n            \"ImageAlt\" : imageGroup[3].trim(),\r\n            \"Time1\" : timeGroup[1].trim(),\r\n            \"Time2\" : timeGroup[2].trim(),\r\n            \"AuthorUrl\" : authorGroup[1].trim(),\r\n            \"Author\" : authorGroup[2].trim(),\r\n            \"BlogPostUrl\" : titleLinkGroup[1].trim(),\r\n            \"Title\" : titleLinkGroup[2].trim(),\r\n            \"Description\" : descGroup[1].trim()\r\n        }\r\n    );\r\n}\r\nsetProperty(\"articles\", JSON.stringify(result));\r\n//setProperty(\"articles\", result);\r\nsetOutcome('Done');"
+                }
+              }
+            },
+            {
+              "ActivityId": "4h4kb6acsb6b6rds0f32319nc3",
+              "Name": "HttpResponseTask",
+              "X": 1080,
+              "Y": 320,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 200,
+                "Content": {
+                  "Expression": "{{ Workflow.Properties['articles'] | jsonparse | json }}"
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4577jvk3n0rk400dtzrhdvvyxm",
+              "Name": "ForEachTask",
+              "X": 660,
+              "Y": 310,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LoopVariableName": "article",
+                "Enumerable": {
+                  "Expression": "JSON.parse(property('articles'))"
+                }
+              }
+            },
+            {
+              "ActivityId": "4fcwgxbzjk7k14vvmgr0p8v9xc",
+              "Name": "ScriptTask",
+              "X": 680,
+              "Y": 100,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "save article"
+                },
+                "AvailableOutcomes": [
+                  "Created",
+                  "AlreadyExists"
+                ],
+                "Script": {
+                  "Expression": "[js: `var article = property('article');\r\nvar queryResult = executeQuery(\"IsContentItemExists\", { \"ContentItemId\" : article.ContentItemId });\r\nif (queryResult && queryResult[0] && queryResult[0].count === 0) {\r\n    var contentItem = newContentItem('DotnetBlogPost');\r\n    //override ContentItemId\r\n    contentItem.ContentItemId = article.ContentItemId;\r\n    contentItem.ContentItemVersionId = uuid();\r\n    contentItem.Latest = true;\r\n    contentItem.Published = true;\r\n    contentItem.CreatedUtc = article.Time1;\r\n    contentItem.PublishedUtc = article.Time1;\r\n    updateContentItem(contentItem, { \r\n        \"DotnetBlogPost\" : {\r\n            \"Author\" : { \"Text\" : article.Author },\r\n            \"Title\" : { \"Text\" : article.Title },\r\n            \"Description\" : { \"Text\" : article.Description },\r\n            \"ImageUrl\" : { \"Text\" : article.ImageUrl },\r\n            \"AuthorUrl\" : { \"Text\" : article.AuthorUrl },\r\n            \"BlogPostUrl\" : { \"Text\" : article.BlogPostUrl },\r\n            \"PublishedDateTime\" : { \"Value\" : article.Time1 }\r\n        },\r\n        \"ContainedPart\": {\r\n            \"ListContentItemId\": \"` + variables('HomePageContentItemId') + `\"\r\n        }\r\n    });\r\n    setOutcome('Created');\r\n} else {\r\n    setOutcome('AlreadyExists');\r\n}\r\n`]"
+                }
+              }
+            },
+            {
+              "ActivityId": "4a577vvvmm3nvrbse1s084x0nv",
+              "Name": "LogTask",
+              "X": 950,
+              "Y": 100,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 0,
+                "Text": {
+                  "Expression": "Article already exisits: {{ Workflow.Properties['article'].ContentItemId }}"
+                }
+              }
+            },
+            {
+              "ActivityId": "4e4arb72d331e1cnxkzhh5gnww",
+              "Name": "TimerEvent",
+              "X": 410,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Fetch New Posts"
+                },
+                "CronExpression": "0 */12 * * *"
+              }
+            },
+            {
+              "ActivityId": "4h7hwmr6fxhpnspph0pryv465g",
+              "Name": "ScriptTask",
+              "X": 30,
+              "Y": 170,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "AvailableOutcomes": [
+                  "Done"
+                ],
+                "Script": {
+                  "Expression": "var url = `https://devblogs.microsoft.com/dotnet/`;\r\nconst page = parseInt(queryString('page'));\r\nif (!isNaN(page)) {\r\n  url = url + `page/${page}`;\r\n}\r\nsetProperty('dotnetBlogUrl', url);\r\nsetOutcome('Done');"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('Blog_Activity')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4h7hwmr6fxhpnspph0pryv465g"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4h7hwmr6fxhpnspph0pryv465g",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4cb041jycjxbktg1fe8qcabnd7"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4cb041jycjxbktg1fe8qcabnd7",
+              "SourceOutcomeName": "200",
+              "DestinationActivityId": "4yn8z6g5thv7jvpnvwch1jr7xq"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4yn8z6g5thv7jvpnvwch1jr7xq",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4xgbxr67xkxgp47wzfemng4m59"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4577jvk3n0rk400dtzrhdvvyxm",
+              "SourceOutcomeName": "Iterate",
+              "DestinationActivityId": "4fcwgxbzjk7k14vvmgr0p8v9xc"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4577jvk3n0rk400dtzrhdvvyxm",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4h4kb6acsb6b6rds0f32319nc3"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4fcwgxbzjk7k14vvmgr0p8v9xc",
+              "SourceOutcomeName": "Created",
+              "DestinationActivityId": "4577jvk3n0rk400dtzrhdvvyxm"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4fcwgxbzjk7k14vvmgr0p8v9xc",
+              "SourceOutcomeName": "AlreadyExists",
+              "DestinationActivityId": "4a577vvvmm3nvrbse1s084x0nv"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4a577vvvmm3nvrbse1s084x0nv",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4577jvk3n0rk400dtzrhdvvyxm"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4xgbxr67xkxgp47wzfemng4m59",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4577jvk3n0rk400dtzrhdvvyxm"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4e4arb72d331e1cnxkzhh5gnww",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4cb041jycjxbktg1fe8qcabnd7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "Templates": {
+        "Page__ListPart": {
+          "Content": "[js: `{% if Model.ContentItems != null and Model.ContentItems.size > 0 %}\r\n    <div class=\"row row-cols-3 row-cols-md-3 g-4\">\r\n        {% for item in Model.ContentItems %}\r\n            {{ item | shape_build_display: \"Summary\" | shape_render }}\r\n        {% endfor %}\r\n    </div>\r\n{% else %}\r\n    <p class=\"alert alert-warning\">\r\n        {{\"There are no posts, yet.\" | t }}\r\n        <a href=\"` + getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('Blog_Workflow'), variables('Blog_Activity')))) + `\">(init)</a>\r\n    </p>\r\n{% endif %}\r\n\r\n{% assign previousText = \"← Newer Posts\" | t %}\r\n{% assign nextText = \"Older Posts →\" | t %}\r\n{% assign previousClass = \"previous\" | t %}\r\n{% assign nextClass = \"next\" | t %}\r\n\r\n{% shape_pager Model.Pager previous_text: previousText, next_text: nextText,\r\n    previous_class: previousClass, next_class: nextClass %}\r\n\r\n{{ Model.Pager | shape_render }}`]",
+          "Description": null
+        },
+        "Content_Summary__DotnetBlogPost": {
+          "Content": "<div class=\"col-lg-4 mb-3 d-flex align-items-stretch\">\r\n    <div class=\"card\">\r\n        <div class=\"card-header\">\r\n        <h5 class=\"card-title\">\r\n            <a class=\"card-link text-decoration-none\" href=\"{{ Model.ContentItem.Content.DotnetBlogPost.BlogPostUrl.Text }}\" target=\"_blank\">\r\n                {{ Model.ContentItem.Content.DotnetBlogPost.Title.Text | raw }}\r\n            </a>\r\n        </h5>\r\n        </div>\r\n        <div class=\"card-body\">\r\n            <div class=\"d-flex align-content-center flex-wrap\">\r\n                <img src=\"{{ Model.ContentItem.Content.DotnetBlogPost.ImageUrl.Text }}\" class=\"card-img-top\" alt=\"{{ Model.ContentItem.Content.DotnetBlogPost.Title.Text }}\">\r\n            </div>\r\n        </div>\r\n        <div class=\"card-footer\">\r\n            <p class=\"card-text\">{{ Model.ContentItem.Content.DotnetBlogPost.Description.Text | raw }}</p>\r\n        </div>\r\n        <ul class=\"list-group list-group-flush\">\r\n            <li class=\"list-group-item\"><a class=\"card-link text-decoration-none\" href=\"{{ Model.ContentItem.Content.DotnetBlogPost.AuthorUrl.Text }}\">{{ Model.ContentItem.Content.DotnetBlogPost.Author.Text }}</a></li>\r\n            <li class=\"list-group-item\">{{ Model.ContentItem.Content.DotnetBlogPost.PublishedDateTime.Value | local | date: \"%c\" }}</li>\r\n        </ul>\r\n    </div>\r\n</div>\r\n",
+          "Description": null
+        },
+        "Content__Page": {
+          "Content": "<section>\r\n  <div class=\"container\">\r\n      <h1>.NET Blog</h1>\r\n      {{ Model.Content | shape_render }}\r\n  </div>\r\n</section>",
+          "Description": null
+        }
+      }
+    },
+    {
+      "name": "ContentDefinition",
+      "ContentTypes": [
+        {
+          "Name": "DotnetBlogPost",
+          "DisplayName": "DotnetBlogPost",
+          "Settings": {
+            "ContentTypeSettings": {
+              "Creatable": true,
+              "Listable": true,
+              "Draftable": true,
+              "Versionable": true,
+              "Securable": true
+            },
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "DotnetBlogPost",
+              "Name": "DotnetBlogPost",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                }
+              }
+            },
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                },
+                "GraphQLContentTypePartSettings": {},
+                "TitlePartSettings": {
+                  "Options": 2,
+                  "Pattern": "{{ ContentItem.Content.DotnetBlogPost.Title.Text }}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "Page",
+          "DisplayName": "Page",
+          "Settings": {
+            "ContentTypeSettings": {
+              "Creatable": true,
+              "Listable": true,
+              "Draftable": true,
+              "Versionable": true,
+              "Securable": true
+            },
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "Page",
+              "Name": "Page",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                }
+              }
+            },
+            {
+              "PartName": "AutoroutePart",
+              "Name": "AutoroutePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "2"
+                },
+                "GraphQLContentTypePartSettings": {},
+                "AutoroutePartSettings": {
+                  "ShowHomepageOption": true
+                }
+              }
+            },
+            {
+              "PartName": "ListPart",
+              "Name": "ListPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "3"
+                },
+                "GraphQLContentTypePartSettings": {},
+                "ListPartSettings": {
+                  "PageSize": 12,
+                  "ContainedContentTypes": [
+                    "DotnetBlogPost"
+                  ]
+                }
+              }
+            },
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ContentParts": [
+        {
+          "Name": "AutoroutePart",
+          "Settings": {
+            "ContentPartSettings": {
+              "Attachable": true,
+              "Description": "Provides a custom url for your content item."
+            }
+          },
+          "ContentPartFieldDefinitionRecords": []
+        },
+        {
+          "Name": "ListPart",
+          "Settings": {
+            "ContentPartSettings": {
+              "Attachable": true,
+              "Description": "Add a list behavior."
+            }
+          },
+          "ContentPartFieldDefinitionRecords": []
+        },
+        {
+          "Name": "TitlePart",
+          "Settings": {
+            "ContentPartSettings": {
+              "Attachable": true,
+              "Description": "Provides a Title for your content item.",
+              "DefaultPosition": "0"
+            }
+          },
+          "ContentPartFieldDefinitionRecords": []
+        },
+        {
+          "Name": "DotnetBlogPost",
+          "Settings": {},
+          "ContentPartFieldDefinitionRecords": [
+            {
+              "FieldName": "TextField",
+              "Name": "Author",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Author",
+                  "Position": "4"
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "Title",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Title",
+                  "Position": "0"
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "Description",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Description",
+                  "Position": "1"
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "ImageUrl",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "ImageUrl",
+                  "Position": "3"
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "AuthorUrl",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "AuthorUrl",
+                  "Editor": "Url",
+                  "Position": "5"
+                },
+                "TextFieldSettings": {}
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "BlogPostUrl",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "BlogPostUrl",
+                  "Editor": "Url",
+                  "Position": "2"
+                },
+                "TextFieldSettings": {}
+              }
+            },
+            {
+              "FieldName": "DateTimeField",
+              "Name": "PublishedDateTime",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "PublishedDateTime",
+                  "Position": "6"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Queries",
+      "Queries": [
+        {
+          "Template": "Select count(1) as \"count\" from ContentItemIndex where ContentItemId = @ContentItemId:'' and Latest = 1 and Published = 1",
+          "ReturnDocuments": false,
+          "Name": "IsContentItemExists",
+          "Source": "Sql",
+          "Schema": null
+        }
+      ]
+    },
+    {
+      "name": "Themes",
+      "Site": "TheTheme",
+      "Admin": "TheAdmin"
+    },
+    {
+      "name": "content",
+      "data": [
+        {
+          "ContentItemId": "[js: variables('HomePageContentItemId')]",
+          "ContentItemVersionId": "[js: uuid()]",
+          "ContentType": "Page",
+          "DisplayText": "Home",
+          "Latest": true,
+          "Published": true,
+          "ModifiedUtc": "[js: variables('now')]",
+          "PublishedUtc": "[js: variables('now')]",
+          "CreatedUtc": "[js: variables('now')]",
+          "Owner": "4fm69x252ds6y0ga7bfsysp1c3",
+          "Author": "lampersky",
+          "Page": {},
+          "AutoroutePart": {
+            "Path": "home",
+            "SetHomepage": true,
+            "Disabled": false,
+            "RouteContainedItems": false,
+            "Absolute": false
+          },
+          "ListPart": {
+            "FeedProxyUrl": null,
+            "FeedItemsCount": 6
+          },
+          "TitlePart": {
+            "Title": "Home"
+          }
+        }
+      ]
+    }
+  ]
+}
