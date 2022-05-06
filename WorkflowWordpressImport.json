@@ -1,0 +1,2240 @@
+{
+  "name": "",
+  "displayName": "",
+  "description": "",
+  "author": "lampersky",
+  "website": "",
+  "version": "",
+  "issetuprecipe": false,
+  "categories": [],
+  "tags": [],
+  "variables": {
+    "GetImportProgress_Workflow": "[js:uuid()]",
+    "GetImportProgress_Activity": "[js:uuid()]",
+    "GetImportProgress_Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('GetImportProgress_Workflow'), variables('GetImportProgress_Activity'))))]",
+    "PostStartImport_Workflow": "[js:uuid()]",
+    "PostStartImport_Activity": "[js:uuid()]",
+    "PostStartImport_Url": "[js: getUrlPrefix('/workflows/invoke?token=' + encodeURI(createWorkflowToken(variables('PostStartImport_Workflow'), variables('PostStartImport_Activity'))))]",
+    "now": "[js: new Date().toISOString()]"
+  },
+  "steps": [
+    {
+      "name": "Feature",
+      "enable": [
+        "Application.Default",
+        "OrchardCore.Cms.Web",
+        "OrchardCore.Settings",
+        "OrchardCore.Admin",
+        "OrchardCore.Liquid",
+        "OrchardCore.Contents",
+        "OrchardCore.ContentTypes",
+        "OrchardCore.AdminMenu",
+        "OrchardCore.Templates",
+        "OrchardCore.Alias",
+        "OrchardCore.Autoroute",
+        "OrchardCore.Resources",
+        "OrchardCore.Features",
+        "OrchardCore.Scripting",
+        "OrchardCore.Recipes",
+        "OrchardCore.Shortcodes",
+        "OrchardCore.ContentFields",
+        "OrchardCore.ContentFields.Indexing.SQL",
+        "OrchardCore.Users",
+        "OrchardCore.ContentPreview",
+        "OrchardCore.Deployment",
+        "OrchardCore.Contents.Deployment.Download",
+        "OrchardCore.CustomSettings",
+        "OrchardCore.Deployment.Remote",
+        "OrchardCore.Diagnostics",
+        "OrchardCore.DynamicCache",
+        "OrchardCore.Widgets",
+        "OrchardCore.Feeds",
+        "OrchardCore.Flows",
+        "OrchardCore.HomeRoute",
+        "OrchardCore.Html",
+        "OrchardCore.Indexing",
+        "OrchardCore.Rules",
+        "OrchardCore.Layers",
+        "OrchardCore.Lists",
+        "OrchardCore.Markdown",
+        "OrchardCore.Media",
+        "OrchardCore.Title",
+        "OrchardCore.Menu",
+        "OrchardCore.Navigation",
+        "OrchardCore.Placements",
+        "OrchardCore.Queries",
+        "OrchardCore.Queries.Sql",
+        "OrchardCore.Roles",
+        "OrchardCore.Shortcodes.Templates",
+        "OrchardCore.Taxonomies",
+        "OrchardCore.Themes",
+        "OrchardCore.Workflows",
+        "OrchardCore.Workflows.CustomEvents",
+        "OrchardCore.Workflows.Http",
+        "OrchardCore.Workflows.Session",
+        "OrchardCore.Workflows.Timers",
+        "SafeMode",
+        "TheAdmin",
+        "TheBlogTheme"
+      ]
+    },
+    {
+      "name": "WorkflowType",
+      "data": [
+        {
+          "WorkflowTypeId": "[js: variables('GetImportProgress_Workflow')]",
+          "Name": "GetImportProgress",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "[js: variables('GetImportProgress_Activity')]",
+              "Name": "HttpRequestEvent",
+              "X": 0,
+              "Y": 20,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpMethod": "GET",
+                "Url": "[js: variables('GetImportProgress_Url')]",
+                "ValidateAntiforgeryToken": false,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "42gyas6238jj0w6224262xwtc0",
+              "Name": "HttpResponseTask",
+              "X": 600,
+              "Y": 30,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 200,
+                "Content": {
+                  "Expression": "{\r\n\t\"status\" : \"{{ Workflow.Properties[\"status\"] }}\",\r\n\t\"items\" : {{ Workflow.Properties[\"results\"] | json }}\r\n}"
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4trdrdwxyex4dytbjv0a7e134r",
+              "Name": "ScriptTask",
+              "X": 390,
+              "Y": 30,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "AvailableOutcomes": [
+                  "Done"
+                ],
+                "Script": {
+                  "Expression": "var results = executeQuery(\"getActiveImportState\", {});\r\nif (results && results[0]) {\r\n    if (results[0].Finished) {\r\n        //import exists and it is finished, so we can rename latest to some random value and create new latest\r\n        setProperty(\"results\", results);\r\n        setProperty(\"status\", \"finished\");\r\n    } else {\r\n        //import exists but it is still in progress, do nothing\r\n        setProperty(\"results\", results);\r\n        setProperty(\"status\", \"inProgress\");\r\n    }\r\n} else {\r\n    // import doesn't exists, so we can create new one\r\n    setProperty(\"results\", []);\r\n    setProperty(\"status\", \"starting\");\r\n}\r\nsetOutcome('Done');"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('GetImportProgress_Activity')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4trdrdwxyex4dytbjv0a7e134r"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4trdrdwxyex4dytbjv0a7e134r",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "42gyas6238jj0w6224262xwtc0"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "[js: variables('PostStartImport_Workflow')]",
+          "Name": "PostStartImport",
+          "IsEnabled": true,
+          "IsSingleton": true,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "4gy6569dzhj255pqvk86w8635z",
+              "Name": "ScriptTask",
+              "X": 920,
+              "Y": 60,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "AvailableOutcomes": [
+                  "ClearPreviousImport",
+                  "ImportInProgress",
+                  "StartImport",
+                  "MissingOrInvalidArgument"
+                ],
+                "Script": {
+                  "Expression": "const d = deserializeRequestData();\r\nif (d && d[\"url\"] && d[\"url\"][0] && d[\"what\"] && d[\"what\"][0]) {\r\n    setProperty(\"url\", d[\"url\"][0]);\r\n    setProperty(\"what\", d[\"what\"])\r\n} else {\r\n    setOutcome(\"MissingOrInvalidArgument\");\r\n    return;\r\n}\r\n\r\nvar results = executeQuery(\"getActiveImportState\", {});\r\nif (results && results.length > 0) {\r\n    if (results[0].Finished) {\r\n        //import exists and it is finished, so we can rename latest to some random value and create new latest\r\n        setProperty(\"randomUuid\", uuid());\r\n        setProperty(\"previousImportContentItemId\", results[0].ListContentItemId);\r\n        setOutcome(\"ClearPreviousImport\");\r\n    } else {\r\n        //import exists but it is still in progress, do nothing\r\n        setOutcome(\"ImportInProgress\");\r\n    }\r\n} else {\r\n    // import doesn't exists, so we can create new one\r\n    setOutcome('StartImport');\r\n}"
+                }
+              }
+            },
+            {
+              "ActivityId": "[js: variables('PostStartImport_Activity')]",
+              "Name": "HttpRequestEvent",
+              "X": 0,
+              "Y": 20,
+              "IsStart": true,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpMethod": "POST",
+                "Url": "[js: variables('PostStartImport_Url')]",
+                "ValidateAntiforgeryToken": true,
+                "TokenLifeSpan": 0
+              }
+            },
+            {
+              "ActivityId": "4c1tagqetyn65xmykc3kd26zdw",
+              "Name": "CreateContentTask",
+              "X": 1240,
+              "Y": 330,
+              "IsStart": false,
+              "Properties": {
+                "ContentType": "ImportState",
+                "Publish": true,
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"Finished\" : false,\r\n  \"AutoroutePart\" : { \"Path\" : \"progress/latest\", \"SetHomepage\" : true, \"Disabled\" : false, \"RouteContainedItems\" : false, \"Absolute\" : false },\r\n  \"ImportState\" : {\r\n    \"Type\" : {\r\n      \"Values\" : {{ Workflow.Properties['what'] | json | raw }}\r\n    },\r\n    \"Url\" : {\r\n\t  \"Text\" : {{ Workflow.Properties['url'] | json | raw }}\r\n\t},\r\n    \"ListContentItemId\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['listContentItemId'] }}\"] },\r\n    \"TagsTaxonomy\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['tagsTaxonomyContentItemId'] }}\"] },\r\n    \"CategoriesTaxonomy\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['categoriesTaxonomyContentItemId'] }}\"] }\r\n  }\r\n}"
+                },
+                "ActivityMetadata": {
+                  "Title": "CreateNewImport"
+                }
+              }
+            },
+            {
+              "ActivityId": "4k56ttnk36jv57hebejfkzcydv",
+              "Name": "HttpRedirectTask",
+              "X": 1220,
+              "Y": 50,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Location": {
+                  "Expression": "[js: getUrlPrefix('/')]"
+                },
+                "Permanent": false
+              }
+            },
+            {
+              "ActivityId": "4t2q6q95exzv67d1hsxb8mn84q",
+              "Name": "UpdateContentTask",
+              "X": 410,
+              "Y": 320,
+              "IsStart": false,
+              "Properties": {
+                "Content": {
+                  "Expression": "property(\"previousImportContentItemId\")"
+                },
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"Finished\" : true,\r\n  \"AutoroutePart\" : { \"Path\" : \"progress/{{ Workflow.Properties[\"randomUuid\"] }}\", \"SetHomepage\" : true, \"Disabled\" : false, \"RouteContainedItems\" : false, \"Absolute\" : false },\r\n}"
+                },
+                "Publish": true,
+                "ActivityMetadata": {
+                  "Title": "ClearPreviousImport"
+                }
+              }
+            },
+            {
+              "ActivityId": "4c72mrgrj692rs1gr99660f04m",
+              "Name": "HttpResponseTask",
+              "X": 390,
+              "Y": 180,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 400,
+                "Content": {
+                  "Expression": "{ \"error\" : \"missing or invalid argument\" }"
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4x5x4v9kca889sjz2a1dfkw5xz",
+              "Name": "ScriptTask",
+              "X": 830,
+              "Y": 330,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "get Taxonomies and Blog ContentItemIds"
+                },
+                "AvailableOutcomes": [
+                  "Done",
+                  "CantReadContentItemId"
+                ],
+                "Script": {
+                  "Expression": "const results = executeQuery(\"getTaxonomiesAndBlogIds\", {});\r\nif (results && results[0]) {\r\n    var count = 0;\r\n    for (const row of results) {\r\n        if (row[\"Name\"] == \"Categories\") {\r\n            setProperty(\"categoriesTaxonomyContentItemId\", row[\"ContentItemId\"]);\r\n            count++;\r\n        } else if (row[\"Name\"] == \"Tags\") {\r\n            setProperty(\"tagsTaxonomyContentItemId\", row[\"ContentItemId\"]);\r\n            count++;\r\n        } else if (row[\"Name\"] == \"Blog\") {\r\n            setProperty(\"listContentItemId\", row[\"ContentItemId\"]);\r\n            count++;\r\n        }\r\n    }\r\n    if (count == 3) {\r\n        setOutcome('Done');\r\n        return;\r\n    }\r\n}\r\nsetOutcome(\"CantReadContentItemId\");"
+                }
+              }
+            },
+            {
+              "ActivityId": "4rhry41zptkg90hj60fxs530ch",
+              "Name": "HttpResponseTask",
+              "X": 920,
+              "Y": 520,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 400,
+                "Content": {
+                  "Expression": "{ \"error\" : \"can't read Tags/Categories/Blog ContentItemIds\" }"
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                }
+              }
+            },
+            {
+              "ActivityId": "43pq8yrac7dtrrc2s1mdqy4sxh",
+              "Name": "HttpResponseTask",
+              "X": 440,
+              "Y": 530,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 400,
+                "Content": {
+                  "Expression": "{ \"error\" : \"can't clear previous import state\" }"
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4jez6pq0gfewm1xjxfsxqgwp4n",
+              "Name": "ValidateUserTask",
+              "X": 410,
+              "Y": 40,
+              "IsStart": false,
+              "Properties": {
+                "Roles": [
+                  "Administrator"
+                ],
+                "SetUserName": false,
+                "ActivityMetadata": {
+                  "Title": "is Admin?"
+                }
+              }
+            },
+            {
+              "ActivityId": "40tm4cdgmwvpxzvp1b7ewc4yc5",
+              "Name": "HttpResponseTask",
+              "X": 0,
+              "Y": 200,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "HttpStatusCode": 400,
+                "Content": {
+                  "Expression": "{ \"error\" : \"only administrator can perform import!\" }"
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "4gy6569dzhj255pqvk86w8635z",
+              "SourceOutcomeName": "ImportInProgress",
+              "DestinationActivityId": "4k56ttnk36jv57hebejfkzcydv"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4c1tagqetyn65xmykc3kd26zdw",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4k56ttnk36jv57hebejfkzcydv"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4gy6569dzhj255pqvk86w8635z",
+              "SourceOutcomeName": "MissingOrInvalidArgument",
+              "DestinationActivityId": "4c72mrgrj692rs1gr99660f04m"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4gy6569dzhj255pqvk86w8635z",
+              "SourceOutcomeName": "ClearPreviousImport",
+              "DestinationActivityId": "4t2q6q95exzv67d1hsxb8mn84q"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4gy6569dzhj255pqvk86w8635z",
+              "SourceOutcomeName": "StartImport",
+              "DestinationActivityId": "4x5x4v9kca889sjz2a1dfkw5xz"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4t2q6q95exzv67d1hsxb8mn84q",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4x5x4v9kca889sjz2a1dfkw5xz"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4x5x4v9kca889sjz2a1dfkw5xz",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4c1tagqetyn65xmykc3kd26zdw"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4x5x4v9kca889sjz2a1dfkw5xz",
+              "SourceOutcomeName": "CantReadContentItemId",
+              "DestinationActivityId": "4rhry41zptkg90hj60fxs530ch"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4t2q6q95exzv67d1hsxb8mn84q",
+              "SourceOutcomeName": "Failed",
+              "DestinationActivityId": "43pq8yrac7dtrrc2s1mdqy4sxh"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4jez6pq0gfewm1xjxfsxqgwp4n",
+              "SourceOutcomeName": "InRole",
+              "DestinationActivityId": "4gy6569dzhj255pqvk86w8635z"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "[js: variables('PostStartImport_Activity')]",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4jez6pq0gfewm1xjxfsxqgwp4n"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4jez6pq0gfewm1xjxfsxqgwp4n",
+              "SourceOutcomeName": "Anonymous",
+              "DestinationActivityId": "40tm4cdgmwvpxzvp1b7ewc4yc5"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4jez6pq0gfewm1xjxfsxqgwp4n",
+              "SourceOutcomeName": "Authenticated",
+              "DestinationActivityId": "40tm4cdgmwvpxzvp1b7ewc4yc5"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "4crkys297hbp3rynxstpz9tbxw",
+          "Name": "OnImportTaxonomyCreated",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "48dv90hqpbt157jqb1j1mak9nn",
+              "Name": "RetrieveContentTask",
+              "X": 1130,
+              "Y": 530,
+              "IsStart": false,
+              "Properties": {
+                "Content": {
+                  "Expression": "property(\"taxonomyContentItemId\")"
+                },
+                "ActivityMetadata": {
+                  "Title": "get Taxonomy ContentItem"
+                }
+              }
+            },
+            {
+              "ActivityId": "4qf1bk7j095yw63gntgcv2s1n9",
+              "Name": "ScriptTask",
+              "X": 950,
+              "Y": 0,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Create New Term"
+                },
+                "AvailableOutcomes": [
+                  "Done"
+                ],
+                "Script": {
+                  "Expression": "var item = property(\"item\");\r\n\r\nconst contentType = property(\"contentType\");\r\nconst newContentItemId = `${contentType}_${item[\"id\"].toString().padStart(26 - contentType.length - 1, '0')}`;\r\n\r\nvar tag = newContentItem(contentType);\r\ntag = Object.assign({}, tag, tag.Content);\r\nvar newTag = Object.assign({}, tag, {\r\n    \"ContentItemId\" : newContentItemId,\r\n    \"DisplayText\" : item[\"name\"],\r\n    \"TitlePart\" : { \"Title\" : item[\"name\"] },\r\n    \"Author\" : \"lampersky\",\r\n    \"ModifiedUtc\" : new Date().toJSON(),\r\n    \"AutoroutePart\" : { \"Path\" : item[\"slug\"], \"SetHomepage\" : false, \"Disabled\" : false, \"RouteContainedItems\" : false, \"Absolute\" : false },\r\n    \"TermPart\" : { \"TaxonomyContentItemId\" : property(\"taxonomyContentItemId\") },\r\n    \"@WeldedPartSettings\" : { \"TermPart\": {} }\r\n});\r\nif (contentType == \"Category\") {\r\n    newTag = Object.assign({}, newTag, {\r\n        \"Category\" : { \"Icon\": { \"Text\" : \"fas fa-question\" } }\r\n    });\r\n}\r\ndelete newTag.Id;\r\ndelete newTag.Content;\r\ndelete newTag.ContentItem;\r\n\r\nsetProperty(\"newTerms\", [...property(\"newTerms\"), newTag]);\r\nsetOutcome('Done');"
+                }
+              }
+            },
+            {
+              "ActivityId": "4fchgsrh5js5jv3e37w3y01r5k",
+              "Name": "HttpRequestTask",
+              "X": 490,
+              "Y": 710,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Url": {
+                  "Expression": "{{ Workflow.Properties[\"url\"] | raw }}{{ Workflow.Properties[\"page\"] }}"
+                },
+                "HttpMethod": "GET",
+                "Body": {
+                  "Expression": null
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                },
+                "HttpResponseCodes": "200"
+              }
+            },
+            {
+              "ActivityId": "4w6w7vkd7ztrrsb2m6x7nj6ncg",
+              "Name": "ScriptTask",
+              "X": 970,
+              "Y": 710,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Process Body"
+                },
+                "AvailableOutcomes": [
+                  "ProcessPage"
+                ],
+                "Script": {
+                  "Expression": "var result = JSON.parse(lastResult().Body);\r\nconst [items, headers] = [result.body, result.headers];\r\nconst [totalPages, total] = [headers[\"X-WP-TotalPages\"], headers[\"X-WP-Total\"]];\r\nsetProperty(\"totalItems\", total);\r\nsetProperty(\"totalPages\", totalPages);\r\nsetProperty(\"items\", items);\r\nsetOutcome(\"ProcessPage\");"
+                }
+              }
+            },
+            {
+              "ActivityId": "419tmjzpt3ka9s0g4a33ze76x8",
+              "Name": "ForEachTask",
+              "X": 940,
+              "Y": 170,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LoopVariableName": "item",
+                "Enumerable": {
+                  "Expression": "property(\"items\")"
+                }
+              }
+            },
+            {
+              "ActivityId": "4dz2wh8evsjhp7hp6adqkfs3ws",
+              "Name": "ScriptTask",
+              "X": 1570,
+              "Y": 530,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Update ContentItem"
+                },
+                "AvailableOutcomes": [
+                  "Done"
+                ],
+                "Script": {
+                  "Expression": "var newTerms = property(\"newTerms\");\r\n\r\nvar prop = property(\"ContentItem\");\r\nvar terms = prop[\"ContentItem\"][\"Content\"][\"TaxonomyPart\"][\"Terms\"];\r\nvar together = [...newTerms, ...terms]; //new terms first, becasue we will remove duplicates from beggining of the list\r\n\r\nconst unique = [...new Map(together.map(item => [item[\"ContentItemId\"], item])).values()];\r\n\r\nupdateContentItem(prop, {\r\n    \"TaxonomyPart\" : { \"Terms\" : unique }\r\n});\r\n\r\nsetOutcome('Done');"
+                }
+              }
+            },
+            {
+              "ActivityId": "4hecdm7fc0082w33esbvzmq1c2",
+              "Name": "CommitTransactionTask",
+              "X": 530,
+              "Y": 360,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4p3qzmmvj0bgw4r9cnckvswync",
+              "Name": "ScriptTask",
+              "X": 110,
+              "Y": 260,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "AvailableOutcomes": [
+                  "Done",
+                  "MissingParameter"
+                ],
+                "Script": {
+                  "Expression": "var contentItem = input(\"ContentItem\");\r\n\r\nconst data = {\r\n    \"baseUrl\" : contentItem.Content.ImportPart.BaseUrl.Text,\r\n    \"inputType\" : contentItem.Content.ImportPart.InputType.Text,\r\n    \"fields\" : contentItem.Content.ImportPart.Fields.Text,\r\n    \"page\" : contentItem.Content.ImportPart.Page.Value,\r\n    \"perPage\" : contentItem.Content.ImportPart.PerPage.Value,\r\n    \"contentType\" : contentItem.Content.ImportPart.ContentType.Text,\r\n    \"taxonomyContentItemId\" : contentItem.Content.ImportTaxonomy.TaxonomyContentItemId.ContentItemIds[0],\r\n};\r\n\r\nif (data[\"baseUrl\"] && data[\"inputType\"] && data[\"fields\"] && data[\"contentType\"] && data[\"taxonomyContentItemId\"]) {\r\n    const page = data[\"page\"] ?? 1;\r\n    const perPage = data[\"perPage\"] ?? 100;\r\n    const url = `${data[\"baseUrl\"]}${data[\"inputType\"]}?_envelope&_fields=${data[\"fields\"]}&per_page=${perPage}&page=`;\r\n    setProperty(\"url\", url);\r\n    setProperty(\"page\", page);\r\n    setProperty(\"contentType\", data[\"contentType\"]);\r\n    setProperty(\"taxonomyContentItemId\", data[\"taxonomyContentItemId\"]);\r\n    setProperty(\"stateContentItemId\", input(\"ContentItem\").ContentItemId);\r\n    setProperty(\"newTerms\", []);\r\n    setOutcome('Done');\r\n} else {\r\n    setOutcome('MissingParameter');\r\n}\r\n\r\n"
+                }
+              }
+            },
+            {
+              "ActivityId": "4xztn65ft177xx6dx1c75y6ddz",
+              "Name": "ScriptTask",
+              "X": 560,
+              "Y": 530,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "is Last Page"
+                },
+                "AvailableOutcomes": [
+                  "True",
+                  "False"
+                ],
+                "Script": {
+                  "Expression": "var currentPage = property(\"page\");\r\nconst isLastPage = currentPage >= property(\"totalPages\");\r\nif (!isLastPage) {\r\n    setProperty(\"page\", currentPage + 1);\r\n}\r\nsetOutcome(isLastPage ? \"True\" : \"False\");"
+                }
+              }
+            },
+            {
+              "ActivityId": "4d2wy4p62xstnv3ewp2gq4gdmb",
+              "Name": "ContentCreatedEvent",
+              "X": 80,
+              "Y": 10,
+              "IsStart": true,
+              "Properties": {
+                "ContentTypeFilter": [
+                  "ImportTaxonomy"
+                ],
+                "ActivityMetadata": {
+                  "Title": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4sygfmw03h5aa30j2pcanwn0ny",
+              "Name": "LogTask",
+              "X": 380,
+              "Y": 250,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 4,
+                "Text": {
+                  "Expression": "missing or invalid argument"
+                }
+              }
+            },
+            {
+              "ActivityId": "4yc1dv9pk5w72vra311dmppq4a",
+              "Name": "LogTask",
+              "X": 250,
+              "Y": 440,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 4,
+                "Text": {
+                  "Expression": "can't fetch data from {{ Workflow.Properties[\"url\"] | raw }}{{ Workflow.Properties[\"page\"] }}"
+                }
+              }
+            },
+            {
+              "ActivityId": "4dmwzhfn2fbw3s89fstk1kx3xe",
+              "Name": "LogTask",
+              "X": 1480,
+              "Y": 720,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 2,
+                "Text": {
+                  "Expression": "total pages: {{ Workflow.Properties['totalPages'] }}"
+                }
+              }
+            },
+            {
+              "ActivityId": "48xbqx1cwxrhtzpsbt1rmqr2mb",
+              "Name": "CreateContentTask",
+              "X": 580,
+              "Y": 170,
+              "IsStart": false,
+              "Properties": {
+                "ContentType": "ImportProgressItem",
+                "Publish": false,
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"DisplayText\": \"Progress: {{ Workflow.Properties['page'] | times: 100 | divided_by: Workflow.Properties['totalPages'] | round: 2 }}\",\r\n  \"ContainedPart\": { \"ListContentItemId\" : \"{{ Workflow.Properties['stateContentItemId'] }}\" , \"Order\" : 0 },\r\n  \"ImportProgressItem\" : { \r\n    \"Progress\" : { \"Value\" : {{ Workflow.Properties['page'] | times: 100 | divided_by: Workflow.Properties['totalPages'] | round: 2 }} },\r\n    \"TotalItems\" : { \"Value\" : {{ Workflow.Properties['totalItems'] }} },\r\n  }\r\n}"
+                },
+                "ActivityMetadata": {
+                  "Title": "Update Progress"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "4fchgsrh5js5jv3e37w3y01r5k",
+              "SourceOutcomeName": "200",
+              "DestinationActivityId": "4w6w7vkd7ztrrsb2m6x7nj6ncg"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4qf1bk7j095yw63gntgcv2s1n9",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "419tmjzpt3ka9s0g4a33ze76x8"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4w6w7vkd7ztrrsb2m6x7nj6ncg",
+              "SourceOutcomeName": "ProcessPage",
+              "DestinationActivityId": "419tmjzpt3ka9s0g4a33ze76x8"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "419tmjzpt3ka9s0g4a33ze76x8",
+              "SourceOutcomeName": "Iterate",
+              "DestinationActivityId": "4qf1bk7j095yw63gntgcv2s1n9"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4hecdm7fc0082w33esbvzmq1c2",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4xztn65ft177xx6dx1c75y6ddz"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4xztn65ft177xx6dx1c75y6ddz",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "4fchgsrh5js5jv3e37w3y01r5k"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4d2wy4p62xstnv3ewp2gq4gdmb",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4p3qzmmvj0bgw4r9cnckvswync"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4p3qzmmvj0bgw4r9cnckvswync",
+              "SourceOutcomeName": "MissingParameter",
+              "DestinationActivityId": "4sygfmw03h5aa30j2pcanwn0ny"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4fchgsrh5js5jv3e37w3y01r5k",
+              "SourceOutcomeName": "UnhandledHttpStatus",
+              "DestinationActivityId": "4yc1dv9pk5w72vra311dmppq4a"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4dz2wh8evsjhp7hp6adqkfs3ws",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4dmwzhfn2fbw3s89fstk1kx3xe"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4p3qzmmvj0bgw4r9cnckvswync",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4fchgsrh5js5jv3e37w3y01r5k"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4xztn65ft177xx6dx1c75y6ddz",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "48dv90hqpbt157jqb1j1mak9nn"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "48dv90hqpbt157jqb1j1mak9nn",
+              "SourceOutcomeName": "Retrieved",
+              "DestinationActivityId": "4dz2wh8evsjhp7hp6adqkfs3ws"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "48xbqx1cwxrhtzpsbt1rmqr2mb",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4hecdm7fc0082w33esbvzmq1c2"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "48xbqx1cwxrhtzpsbt1rmqr2mb",
+              "SourceOutcomeName": "Failed",
+              "DestinationActivityId": "4hecdm7fc0082w33esbvzmq1c2"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "419tmjzpt3ka9s0g4a33ze76x8",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "48xbqx1cwxrhtzpsbt1rmqr2mb"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "4vn7ndw0ba8mpwbzp08kk5ctxe",
+          "Name": "OnImportItemCreated",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "4qf1bk7j095yw63gntgcv2s1n9",
+              "Name": "ScriptTask",
+              "X": 920,
+              "Y": 50,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Create New Item"
+                },
+                "AvailableOutcomes": [
+                  "Done"
+                ],
+                "Script": {
+                  "Expression": "const item = property(\"item\");\r\n\r\nconst typeMappings = { \"BlogPost\" : \"blog\", \"Page\" : \"page\" };\r\nconst contentType = property(\"contentType\");\r\nconst pathPrefix = typeMappings[contentType] ?? \"Unknown\";\r\nconst newContentItemId = `${contentType}_${item[\"id\"].toString().padStart(26 - contentType.length - 1, '0')}`;\r\n\r\nconst isPublished = item[\"status\"] === \"publish\";\r\nconst modifiedUtc = new Date(item[\"modified_gmt\"]).toJSON();\r\n\r\nvar results = executeQuery(\"getContentItemById\", { \"ContentItemId\" : newContentItemId });\r\nif (results.length > 0) {\r\n    var newItem = results[0];\r\n} else {\r\n    var newItem = newContentItem(contentType);\r\n    newItem.ContentItemId = newContentItemId;\r\n    newItem.ContentItemVersionId = uuid();\r\n    newItem.Latest = true;\r\n    newItem.Published = true;\r\n    newItem.CreatedUtc = new Date(item[\"date_gmt\"]).toJSON()\r\n    newItem.PublishedUtc = isPublished ? modifiedUtc : null;\r\n    newItem.ModifiedUtc = modifiedUtc;\r\n}\r\n\r\nvar common = {\r\n    \"DisplayText\" : item[\"title\"].rendered,\r\n    \"TitlePart\" : { \"Title\" : item[\"title\"].rendered },\r\n    \"AutoroutePart\" : { \"Path\" : pathPrefix + \"/\" + item[\"slug\"], \"SetHomepage\" : false, \"Disabled\" : false, \"RouteContainedItems\" : false, \"Absolute\" : false }\r\n};\r\n\r\nvar properties = {};\r\n\r\nif (contentType == \"BlogPost\") {\r\n    const categories = item.categories.map(c => \"Category_\" + c.toString().padStart(26 - 9, '0'));\r\n    const tags = item.tags.map(c => \"Tag_\" + c.toString().padStart(26 - 4, '0'));\r\n    \r\n    properties = Object.assign({}, common, {\r\n        \"BlogPost\":{\r\n            \"Subtitle\":{\"Text\":\"\"},\r\n            \"Image\":{\"Paths\":null,\"MediaTexts\":null},\r\n            \"Tags\":{\r\n                \"TaxonomyContentItemId\" : property(\"tagsTaxonomyContentItemId\"),\r\n                \"TermContentItemIds\" : tags\r\n            },\r\n            \"Category\":{ \r\n                \"TaxonomyContentItemId\" : property(\"categoriesTaxonomyContentItemId\"),\r\n                \"TermContentItemIds\" : categories\r\n            }\r\n        },\r\n        \"MarkdownBodyPart\" : { \"Markdown\": null },\r\n        \"HtmlBodyPart\" : { \"Html\" : item[\"content\"].rendered },\r\n        \"ContainedPart\": { \"ListContentItemId\" : property(\"listContentItemId\") , \"Order\":0 }\r\n    });\r\n}\r\n\r\nupdateContentItem(newItem, properties);\r\n\r\nsetProperty(\"newItem\", newItem);\r\nsetOutcome('Done');"
+                }
+              }
+            },
+            {
+              "ActivityId": "4fchgsrh5js5jv3e37w3y01r5k",
+              "Name": "HttpRequestTask",
+              "X": 470,
+              "Y": 820,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "Url": {
+                  "Expression": "{{ Workflow.Properties[\"url\"] | raw }}{{ Workflow.Properties[\"page\"] }}"
+                },
+                "HttpMethod": "GET",
+                "Body": {
+                  "Expression": null
+                },
+                "ContentType": {
+                  "Expression": "application/json"
+                },
+                "Headers": {
+                  "Expression": null
+                },
+                "HttpResponseCodes": "200"
+              }
+            },
+            {
+              "ActivityId": "4w6w7vkd7ztrrsb2m6x7nj6ncg",
+              "Name": "ScriptTask",
+              "X": 960,
+              "Y": 830,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Process Body"
+                },
+                "AvailableOutcomes": [
+                  "ProcessPage"
+                ],
+                "Script": {
+                  "Expression": "var result = JSON.parse(lastResult().Body);\r\nconst [items, headers] = [result.body, result.headers];\r\nconst [totalPages, total] = [headers[\"X-WP-TotalPages\"], headers[\"X-WP-Total\"]];\r\nsetProperty(\"totalItems\", total);\r\nsetProperty(\"totalPages\", totalPages);\r\nsetProperty(\"items\", items);\r\nsetOutcome(\"ProcessPage\");"
+                }
+              }
+            },
+            {
+              "ActivityId": "419tmjzpt3ka9s0g4a33ze76x8",
+              "Name": "ForEachTask",
+              "X": 910,
+              "Y": 270,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LoopVariableName": "item",
+                "Enumerable": {
+                  "Expression": "property(\"items\")"
+                }
+              }
+            },
+            {
+              "ActivityId": "4hecdm7fc0082w33esbvzmq1c2",
+              "Name": "CommitTransactionTask",
+              "X": 430,
+              "Y": 410,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4p3qzmmvj0bgw4r9cnckvswync",
+              "Name": "ScriptTask",
+              "X": 210,
+              "Y": 360,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "AvailableOutcomes": [
+                  "Done",
+                  "MissingParameter"
+                ],
+                "Script": {
+                  "Expression": "var contentItem = input(\"ContentItem\");\r\n\r\nconst data = {\r\n    \"baseUrl\" : contentItem.Content.ImportPart.BaseUrl.Text,\r\n    \"inputType\" : contentItem.Content.ImportPart.InputType.Text,\r\n    \"fields\" : contentItem.Content.ImportPart.Fields.Text,\r\n    \"contentType\" : contentItem.Content.ImportPart.ContentType.Text,\r\n    \"page\" : contentItem.Content.ImportPart.Page.Value,\r\n    \"perPage\" : contentItem.Content.ImportPart.PerPage.Value,\r\n    \"categoriesTaxonomyContentItemId\" : contentItem.Content.ImportStateItem.CategoriesTaxonomy.ContentItemIds[0],\r\n    \"tagsTaxonomyContentItemId\" : contentItem.Content.ImportStateItem.TagsTaxonomy.ContentItemIds[0],\r\n    \"listContentItemId\" : contentItem.Content.ImportStateItem.ListContentItemId.ContentItemIds[0]\r\n};\r\n\r\nif (!(data[\"baseUrl\"] && data[\"inputType\"] && data[\"fields\"] && data[\"contentType\"])) {\r\n    setOutcome('MissingParameter');\r\n    return;\r\n}\r\n\r\nconst page = data[\"page\"] ?? 1;\r\nconst perPage = data[\"perPage\"] ?? 100;\r\nconst url = `${data[\"baseUrl\"]}${data[\"inputType\"]}?_envelope&_fields=${data[\"fields\"]}&per_page=${perPage}&page=`;\r\nsetProperty(\"url\", url);\r\nsetProperty(\"page\", page);\r\nsetProperty(\"contentType\", data[\"contentType\"]);\r\nsetProperty(\"stateContentItemId\", input(\"ContentItem\").ContentItemId);\r\n\r\nif (data[\"contentType\"] === \"BlogPost\") {\r\n    if (data[\"categoriesTaxonomyContentItemId\"] && data[\"tagsTaxonomyContentItemId\"] && data[\"listContentItemId\"]) {\r\n        setProperty(\"categoriesTaxonomyContentItemId\", data[\"categoriesTaxonomyContentItemId\"]);\r\n        setProperty(\"tagsTaxonomyContentItemId\", data[\"tagsTaxonomyContentItemId\"]);\r\n        setProperty(\"listContentItemId\", data[\"listContentItemId\"]);\r\n    } else {\r\n        setOutcome('MissingParameter');\r\n        return;\r\n    }\r\n}\r\n\r\nsetOutcome('Done');"
+                }
+              }
+            },
+            {
+              "ActivityId": "45rqr6ma9dh70vdfe52xymmkn9",
+              "Name": "ScriptTask",
+              "X": 740,
+              "Y": 650,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Is Last Page"
+                },
+                "AvailableOutcomes": [
+                  "True",
+                  "False"
+                ],
+                "Script": {
+                  "Expression": "var currentPage = property(\"page\");\r\nconst isLastPage = currentPage >= property(\"totalPages\");\r\nif (!isLastPage) {\r\n    setProperty(\"page\", currentPage + 1);\r\n}\r\nsetOutcome(isLastPage ? \"True\" : \"False\");"
+                }
+              }
+            },
+            {
+              "ActivityId": "49rypk2h60ynt3d0wd72kmss5k",
+              "Name": "ContentCreatedEvent",
+              "X": 170,
+              "Y": 60,
+              "IsStart": true,
+              "Properties": {
+                "ContentTypeFilter": [
+                  "ImportStateItem"
+                ],
+                "ActivityMetadata": {
+                  "Title": null
+                }
+              }
+            },
+            {
+              "ActivityId": "4vk08x95ftw4dv8g1nbspc52xh",
+              "Name": "LogTask",
+              "X": 380,
+              "Y": 620,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 4,
+                "Text": {
+                  "Expression": "missing or invalid argument"
+                }
+              }
+            },
+            {
+              "ActivityId": "42518ck04py6c307cr20rrj9cf",
+              "Name": "LogTask",
+              "X": 10,
+              "Y": 890,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 4,
+                "Text": {
+                  "Expression": "can't fetch data from {{ Workflow.Properties[\"url\"] | raw }}{{ Workflow.Properties[\"page\"] }}"
+                }
+              }
+            },
+            {
+              "ActivityId": "4w6v1fkyg1fnw1y10aahk0mr5t",
+              "Name": "LogTask",
+              "X": 1100,
+              "Y": 640,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 2,
+                "Text": {
+                  "Expression": "total pages: {{ Workflow.Properties['totalPages'] }}"
+                }
+              }
+            },
+            {
+              "ActivityId": "49gmaqk35k5v1vczwvy99vq0dc",
+              "Name": "CreateContentTask",
+              "X": 630,
+              "Y": 270,
+              "IsStart": false,
+              "Properties": {
+                "ContentType": "ImportProgressItem",
+                "Publish": false,
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"DisplayText\": \"Progress: {{ Workflow.Properties['page'] | times: 100 | divided_by: Workflow.Properties['totalPages'] | round: 2 }}\",\r\n  \"ContainedPart\": { \"ListContentItemId\" : \"{{ Workflow.Properties['stateContentItemId'] }}\" , \"Order\" : 0 },\r\n  \"ImportProgressItem\" : { \r\n    \"Progress\" : { \"Value\" : {{ Workflow.Properties['page'] | times: 100 | divided_by: Workflow.Properties['totalPages'] | round: 2 }} },\r\n    \"TotalItems\" : { \"Value\" : {{ Workflow.Properties['totalItems'] }} },\r\n  }\r\n}"
+                },
+                "ActivityMetadata": {
+                  "Title": "Update Progress"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "419tmjzpt3ka9s0g4a33ze76x8",
+              "SourceOutcomeName": "Iterate",
+              "DestinationActivityId": "4qf1bk7j095yw63gntgcv2s1n9"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4p3qzmmvj0bgw4r9cnckvswync",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4fchgsrh5js5jv3e37w3y01r5k"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4fchgsrh5js5jv3e37w3y01r5k",
+              "SourceOutcomeName": "200",
+              "DestinationActivityId": "4w6w7vkd7ztrrsb2m6x7nj6ncg"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4w6w7vkd7ztrrsb2m6x7nj6ncg",
+              "SourceOutcomeName": "ProcessPage",
+              "DestinationActivityId": "419tmjzpt3ka9s0g4a33ze76x8"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4hecdm7fc0082w33esbvzmq1c2",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "45rqr6ma9dh70vdfe52xymmkn9"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "45rqr6ma9dh70vdfe52xymmkn9",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "4fchgsrh5js5jv3e37w3y01r5k"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4p3qzmmvj0bgw4r9cnckvswync",
+              "SourceOutcomeName": "MissingParameter",
+              "DestinationActivityId": "4vk08x95ftw4dv8g1nbspc52xh"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4fchgsrh5js5jv3e37w3y01r5k",
+              "SourceOutcomeName": "UnhandledHttpStatus",
+              "DestinationActivityId": "42518ck04py6c307cr20rrj9cf"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "45rqr6ma9dh70vdfe52xymmkn9",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "4w6v1fkyg1fnw1y10aahk0mr5t"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4qf1bk7j095yw63gntgcv2s1n9",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "419tmjzpt3ka9s0g4a33ze76x8"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "49gmaqk35k5v1vczwvy99vq0dc",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4hecdm7fc0082w33esbvzmq1c2"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "49gmaqk35k5v1vczwvy99vq0dc",
+              "SourceOutcomeName": "Failed",
+              "DestinationActivityId": "45rqr6ma9dh70vdfe52xymmkn9"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "419tmjzpt3ka9s0g4a33ze76x8",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "49gmaqk35k5v1vczwvy99vq0dc"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "49rypk2h60ynt3d0wd72kmss5k",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4p3qzmmvj0bgw4r9cnckvswync"
+            }
+          ]
+        },
+        {
+          "WorkflowTypeId": "4fprbdmzjt83fygseyet56dvw7",
+          "Name": "OnImportStateCreated",
+          "IsEnabled": true,
+          "IsSingleton": false,
+          "LockTimeout": 0,
+          "LockExpiration": 0,
+          "DeleteFinishedWorkflows": true,
+          "Activities": [
+            {
+              "ActivityId": "4ynqefbns9dtv7y49vv0m00kxf",
+              "Name": "CreateContentTask",
+              "X": 390,
+              "Y": 450,
+              "IsStart": false,
+              "Properties": {
+                "ContentType": "ImportTaxonomy",
+                "Publish": true,
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"DisplayText\": \"Tags\",\r\n  \"TitlePart\" : {\"Title\" : \"title\"},\r\n  \"ContainedPart\" : { \"ListContentItemId\" : \"{{ Workflow.Properties['contentItemId'] }}\" , \"Order\":0 },\r\n  \"ImportTaxonomy\" : {\r\n    \"TaxonomyContentItemId\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['tagsTaxonomyContentItemId'] }}\"] }\r\n  },\r\n  \"ImportPart\" : {\r\n\t\"Name\" : { \"Text\" : \"Tags\" },\r\n    \"Progress\" : { \"Value\" : 0.0 },\r\n    \"BaseUrl\": { \"Text\" : \"{{ Workflow.Properties['url'] }}\" },\r\n    \"InputType\" : { \"Text\" : \"tags\" },\r\n    \"Fields\" : { \"Text\" : \"id,name,slug\" },\r\n    \"ContentType\" : { \"Text\" : \"Tag\" },\r\n    \"Page\" : { \"Value\" : 1.0 },\r\n    \"PerPage\" : { \"Value\" : 100.0 }\r\n  }\r\n}"
+                },
+                "ActivityMetadata": {
+                  "Title": "Create ImportStateItem for Tags"
+                }
+              }
+            },
+            {
+              "ActivityId": "4zmwyhtcqb15k50tmw90gwe24k",
+              "Name": "CreateContentTask",
+              "X": 390,
+              "Y": 280,
+              "IsStart": false,
+              "Properties": {
+                "ContentType": "ImportTaxonomy",
+                "Publish": true,
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"DisplayText\": \"Categories\",\r\n  \"TitlePart\" : {\"Title\" : \"title\"},\r\n  \"ContainedPart\" : { \"ListContentItemId\" : \"{{ Workflow.Properties['contentItemId'] }}\" , \"Order\":0 },\r\n  \"ImportTaxonomy\" : {\r\n    \"TaxonomyContentItemId\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['categoriesTaxonomyContentItemId'] }}\"] }\r\n  },\r\n  \"ImportPart\" : {\r\n\t\"Name\" : { \"Text\" : \"Categories\" },\r\n    \"Progress\" : { \"Value\" : 0.0 },\r\n    \"BaseUrl\": { \"Text\" : \"{{ Workflow.Properties['url'] }}\" },\r\n    \"InputType\" : { \"Text\" : \"categories\" },\r\n    \"Fields\" : { \"Text\":\"id,name,slug\" },\r\n    \"ContentType\" : { \"Text\":\"Category\" },\r\n    \"Page\" : { \"Value\" : 1.0 },\r\n    \"PerPage\" : { \"Value\" : 100.0 }\r\n  }\r\n}"
+                },
+                "ActivityMetadata": {
+                  "Title": "Create ImportStateItem for Categories"
+                }
+              }
+            },
+            {
+              "ActivityId": "4h6ycc2sdgvv2rpgje0swyr1w5",
+              "Name": "TimerEvent",
+              "X": 620,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "Halt workflow and wait for TimerEvent"
+                },
+                "CronExpression": "* * * * *"
+              }
+            },
+            {
+              "ActivityId": "47dafase5v4016gmytfbd09px4",
+              "Name": "ContentCreatedEvent",
+              "X": 0,
+              "Y": 0,
+              "IsStart": true,
+              "Properties": {
+                "ContentTypeFilter": [
+                  "ImportState"
+                ],
+                "ActivityMetadata": {
+                  "Title": null
+                }
+              }
+            },
+            {
+              "ActivityId": "45tpbmm9e6pmb3n1e921cdnxxe",
+              "Name": "CreateContentTask",
+              "X": 390,
+              "Y": 800,
+              "IsStart": false,
+              "Properties": {
+                "ContentType": "ImportStateItem",
+                "Publish": true,
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"DisplayText\" : \"Posts\",\r\n  \"TitlePart\" : { \"Title\" : \"Posts\" },\r\n  \"ContainedPart\" : { \"ListContentItemId\" : \"{{ Workflow.Properties['contentItemId'] }}\" , \"Order\":0 },\r\n  \"ImportStateItem\" : {\r\n    \"ListContentItemId\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['listContentItemId'] }}\"] },\r\n    \"TagsTaxonomy\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['tagsTaxonomyContentItemId'] }}\"] },\r\n    \"CategoriesTaxonomy\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['categoriesTaxonomyContentItemId'] }}\"] }\r\n  },\r\n  \"ImportPart\" : {\r\n\t\"Name\" : { \"Text\" : \"Posts\" },\r\n    \"Progress\" : { \"Value\" : 0.0 },\r\n    \"BaseUrl\": { \"Text\" : \"{{ Workflow.Properties['url'] }}\" },\r\n    \"InputType\" : { \"Text\" : \"posts\" },\r\n    \"Fields\" : { \"Text\":\"id,date_gmt,modified_gmt,slug,status,title,content,categories,tags\" },\r\n    \"ContentType\" : { \"Text\":\"BlogPost\" },\r\n    \"Page\" : { \"Value\" : 1.0 },\r\n    \"PerPage\" : { \"Value\" : 100.0 }\r\n  }\r\n}"
+                },
+                "ActivityMetadata": {
+                  "Title": "Create ImportStateItem for Posts"
+                }
+              }
+            },
+            {
+              "ActivityId": "4mwzy25t4dcbv0mjwd4720hbwg",
+              "Name": "CreateContentTask",
+              "X": 390,
+              "Y": 630,
+              "IsStart": false,
+              "Properties": {
+                "ContentType": "ImportStateItem",
+                "Publish": true,
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"DisplayText\" : \"Pages\",\r\n  \"TitlePart\" : { \"Title\" : \"Pages\" },\r\n  \"ContainedPart\" : { \"ListContentItemId\" : \"{{ Workflow.Properties['contentItemId'] }}\" , \"Order\":0 },\r\n  \"ImportStateItem\" : {\r\n    \"ListContentItemId\" : { \"ContentItemIds\" : [\"{{ Workflow.Properties['listContentItemId'] }}\"] }\r\n  },\r\n  \"ImportPart\" : {\r\n\t\"Name\" : { \"Text\" : \"Pages\" },\r\n    \"Progress\" : { \"Value\" : 0.0 },\r\n    \"BaseUrl\": { \"Text\" : \"{{ Workflow.Properties['url'] }}\" },\r\n    \"InputType\" : { \"Text\" : \"pages\" },\r\n    \"Fields\" : { \"Text\":\"id,date_gmt,modified_gmt,slug,status,title,content\" },\r\n    \"ContentType\" : { \"Text\":\"Page\" },\r\n    \"Page\" : { \"Value\" : 1.0 },\r\n    \"PerPage\" : { \"Value\" : 100.0 }\r\n  }\r\n}"
+                },
+                "ActivityMetadata": {
+                  "Title": "Create ImportStateItem for Pages"
+                }
+              }
+            },
+            {
+              "ActivityId": "4adtvay1gqmx1v5v5e6w5sf9cm",
+              "Name": "UpdateContentTask",
+              "X": 410,
+              "Y": 1290,
+              "IsStart": false,
+              "Properties": {
+                "Content": {
+                  "Expression": "property('listContentItemId')"
+                },
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"AutoroutePart\" : { \"SetHomepage\" : true }\r\n}"
+                },
+                "Publish": true,
+                "ActivityMetadata": {
+                  "Title": "Set new homepage"
+                }
+              }
+            },
+            {
+              "ActivityId": "4jpb4hetq6c25y0vp98nr1gaxv",
+              "Name": "UpdateContentTask",
+              "X": 340,
+              "Y": 1080,
+              "IsStart": false,
+              "Properties": {
+                "Content": {
+                  "Expression": "property(\"contentItemId\")"
+                },
+                "ContentProperties": {
+                  "Expression": "{\r\n  \"AutoroutePart\" : { \"SetHomepage\" : false },\r\n  \"ImportState\": {\r\n    \"Finished\": {\r\n      \"Value\": true\r\n    }\r\n  }\r\n}"
+                },
+                "Publish": true,
+                "ActivityMetadata": {
+                  "Title": "Mark ImportState as Finished"
+                }
+              }
+            },
+            {
+              "ActivityId": "494xraxratdmt2v0ngzkgjj5x0",
+              "Name": "LogTask",
+              "X": 780,
+              "Y": 520,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "LogLevel": 4,
+                "Text": {
+                  "Expression": "Something went wrong"
+                }
+              }
+            },
+            {
+              "ActivityId": "47rg919gnhppaxkm8xpvpe9jw7",
+              "Name": "ScriptTask",
+              "X": 340,
+              "Y": 10,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": null
+                },
+                "AvailableOutcomes": [
+                  "Done"
+                ],
+                "Script": {
+                  "Expression": "const contentItem = input(\"ContentItem\");\r\nsetProperty(\"contentItemId\", correlationId());\r\nsetProperty(\"url\", contentItem.Content.ImportState.Url.Text);\r\nsetProperty(\"type\", contentItem.Content.ImportState.Type.Values);\r\n\r\nsetProperty(\"categoriesTaxonomyContentItemId\", contentItem.Content.ImportState.CategoriesTaxonomy.ContentItemIds[0]);\r\nsetProperty(\"tagsTaxonomyContentItemId\", contentItem.Content.ImportState.TagsTaxonomy.ContentItemIds[0]);\r\nsetProperty(\"listContentItemId\", contentItem.Content.ImportState.ListContentItemId.ContentItemIds[0]);\r\n\r\nsetOutcome('Done');"
+                }
+              }
+            },
+            {
+              "ActivityId": "4mx0p64neptxk38vbpf7jeccnn",
+              "Name": "IfElseTask",
+              "X": 0,
+              "Y": 180,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "import categories?"
+                },
+                "Condition": {
+                  "Expression": "[...property(\"type\")].includes('categories')"
+                }
+              }
+            },
+            {
+              "ActivityId": "4yhx5ek78hr75vak7g9f73ppxd",
+              "Name": "IfElseTask",
+              "X": 0,
+              "Y": 360,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "import tags?"
+                },
+                "Condition": {
+                  "Expression": "[...property(\"type\")].includes('tags')"
+                }
+              }
+            },
+            {
+              "ActivityId": "4eyggpvshzqsfrn61dhnnmaknc",
+              "Name": "IfElseTask",
+              "X": 0,
+              "Y": 560,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "import pages?"
+                },
+                "Condition": {
+                  "Expression": "[...property(\"type\")].includes('pages')"
+                }
+              }
+            },
+            {
+              "ActivityId": "42z4cyvbwcdfw4k2enrjwcnrwr",
+              "Name": "IfElseTask",
+              "X": 0,
+              "Y": 740,
+              "IsStart": false,
+              "Properties": {
+                "ActivityMetadata": {
+                  "Title": "import posts?"
+                },
+                "Condition": {
+                  "Expression": "[...property(\"type\")].includes('posts')"
+                }
+              }
+            }
+          ],
+          "Transitions": [
+            {
+              "Id": 0,
+              "SourceActivityId": "4jpb4hetq6c25y0vp98nr1gaxv",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4adtvay1gqmx1v5v5e6w5sf9cm"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4zmwyhtcqb15k50tmw90gwe24k",
+              "SourceOutcomeName": "Failed",
+              "DestinationActivityId": "494xraxratdmt2v0ngzkgjj5x0"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4ynqefbns9dtv7y49vv0m00kxf",
+              "SourceOutcomeName": "Failed",
+              "DestinationActivityId": "494xraxratdmt2v0ngzkgjj5x0"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4mwzy25t4dcbv0mjwd4720hbwg",
+              "SourceOutcomeName": "Failed",
+              "DestinationActivityId": "494xraxratdmt2v0ngzkgjj5x0"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "45tpbmm9e6pmb3n1e921cdnxxe",
+              "SourceOutcomeName": "Failed",
+              "DestinationActivityId": "494xraxratdmt2v0ngzkgjj5x0"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "47dafase5v4016gmytfbd09px4",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "47rg919gnhppaxkm8xpvpe9jw7"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "45tpbmm9e6pmb3n1e921cdnxxe",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4jpb4hetq6c25y0vp98nr1gaxv"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4mx0p64neptxk38vbpf7jeccnn",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "4zmwyhtcqb15k50tmw90gwe24k"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4zmwyhtcqb15k50tmw90gwe24k",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4yhx5ek78hr75vak7g9f73ppxd"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4mx0p64neptxk38vbpf7jeccnn",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "4yhx5ek78hr75vak7g9f73ppxd"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4yhx5ek78hr75vak7g9f73ppxd",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "4ynqefbns9dtv7y49vv0m00kxf"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4ynqefbns9dtv7y49vv0m00kxf",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4eyggpvshzqsfrn61dhnnmaknc"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4eyggpvshzqsfrn61dhnnmaknc",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "4mwzy25t4dcbv0mjwd4720hbwg"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4yhx5ek78hr75vak7g9f73ppxd",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "4eyggpvshzqsfrn61dhnnmaknc"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4eyggpvshzqsfrn61dhnnmaknc",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "42z4cyvbwcdfw4k2enrjwcnrwr"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "42z4cyvbwcdfw4k2enrjwcnrwr",
+              "SourceOutcomeName": "True",
+              "DestinationActivityId": "45tpbmm9e6pmb3n1e921cdnxxe"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4mwzy25t4dcbv0mjwd4720hbwg",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "42z4cyvbwcdfw4k2enrjwcnrwr"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "42z4cyvbwcdfw4k2enrjwcnrwr",
+              "SourceOutcomeName": "False",
+              "DestinationActivityId": "4jpb4hetq6c25y0vp98nr1gaxv"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "4h6ycc2sdgvv2rpgje0swyr1w5",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4mx0p64neptxk38vbpf7jeccnn"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "494xraxratdmt2v0ngzkgjj5x0",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4jpb4hetq6c25y0vp98nr1gaxv"
+            },
+            {
+              "Id": 0,
+              "SourceActivityId": "47rg919gnhppaxkm8xpvpe9jw7",
+              "SourceOutcomeName": "Done",
+              "DestinationActivityId": "4h6ycc2sdgvv2rpgje0swyr1w5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Queries",
+      "Queries": [
+        {
+          "Template": "SELECT * FROM ContentItemIndex WHERE ContentType='BlogPost' ORDER BY CreatedUtc DESC LIMIT 3",
+          "ReturnDocuments": false,
+          "Name": "RecentBlogPosts",
+          "Source": "Sql",
+          "Schema": "{\r\n    \"type\": \"ContentItem/BlogPost\"\r\n}"
+        },
+        {
+          "Template": "SELECT cii.DocumentId FROM ContentItemIndex as cii\r\nwhere cii.ContentItemId = @ContentItemId:'' and Latest = 1 and Published = 1",
+          "ReturnDocuments": true,
+          "Name": "getContentItemById",
+          "Source": "Sql",
+          "Schema": null
+        },
+        {
+          "Template": "SELECT api.ContentItemId as ListContentItemId, api.Path, tfi.ContentItemId, tfi.Text as Title, bfi.Boolean as Finished, max(p.Numeric) as Progress, ti.Numeric as TotalItems FROM\r\nAutoroutePartIndex as api LEFT JOIN\r\nContainedPartIndex cpi on api.ContentItemId = cpi.ListContentItemId LEFT JOIN\r\nTextFieldIndex as tfi on tfi.DocumentId = cpi.DocumentId and tfi.ContentField = 'Name' LEFT JOIN\r\nBooleanFieldIndex as bfi on cpi.ListContentItemId = bfi.ContentItemId and bfi.ContentField = 'Finished' LEFT JOIN\r\nContainedPartIndex as pr on pr.ListContentItemId = tfi.ContentItemId LEFT JOIN\r\nNumericFieldIndex as p on p.DocumentId = pr.DocumentId and p.ContentField = 'Progress' LEFT JOIN\r\nNumericFieldIndex as ti on ti.DocumentId = pr.DocumentId and ti.ContentField = 'TotalItems'\r\nWHERE api.Path = 'progress/latest' and api.Latest = 1 and api.Published = 1 \r\ngroup by api.ContentItemId, api.Path, tfi.ContentItemId, tfi.Text, bfi.Boolean, ti.Numeric;",
+          "ReturnDocuments": false,
+          "Name": "getActiveImportState",
+          "Source": "Sql",
+          "Schema": null
+        },
+        {
+          "Template": "\tselect \r\n\tContentItemId, DisplayText as Name\r\n\tfrom ContentItemIndex where Published = 1 and Latest = 1 and (ContentType = 'Blog' or ContentType = 'Taxonomy');",
+          "ReturnDocuments": false,
+          "Name": "getTaxonomiesAndBlogIds",
+          "Source": "Sql",
+          "Schema": null
+        }
+      ]
+    },
+    {
+      "name": "ContentDefinition",
+      "ContentTypes": [
+        {
+          "Name": "BlogPost",
+          "DisplayName": "Blog Post",
+          "Settings": {
+            "ContentTypeSettings": {
+              "Draftable": true,
+              "Versionable": true
+            },
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                }
+              }
+            },
+            {
+              "PartName": "AutoroutePart",
+              "Name": "AutoroutePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                },
+                "AutoroutePartSettings": {
+                  "AllowCustomPath": true,
+                  "Pattern": "{{ Model.ContentItem | container | display_text | slugify }}/{{ Model.ContentItem | display_text | slugify }}",
+                  "ShowHomepageOption": false
+                }
+              }
+            },
+            {
+              "PartName": "BlogPost",
+              "Name": "BlogPost",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "4"
+                }
+              }
+            },
+            {
+              "PartName": "MarkdownBodyPart",
+              "Name": "MarkdownBodyPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "2",
+                  "Editor": "Wysiwyg"
+                }
+              }
+            },
+            {
+              "PartName": "HtmlBodyPart",
+              "Name": "HtmlBodyPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "3",
+                  "Editor": "Wysiwyg"
+                },
+                "HtmlBodyPartSettings": {}
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportState",
+          "DisplayName": "ImportState",
+          "Settings": {
+            "ContentTypeSettings": {},
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "ImportState",
+              "Name": "ImportState",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "2"
+                }
+              }
+            },
+            {
+              "PartName": "ListPart",
+              "Name": "ListPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "3"
+                },
+                "ListPartSettings": {
+                  "PageSize": 10,
+                  "ContainedContentTypes": [
+                    "ImportStateItem",
+                    "ImportTaxonomy"
+                  ]
+                }
+              }
+            },
+            {
+              "PartName": "AutoroutePart",
+              "Name": "AutoroutePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                },
+                "AutoroutePartSettings": {
+                  "AllowCustomPath": true,
+                  "ShowHomepageOption": true,
+                  "AllowUpdatePath": true
+                }
+              }
+            },
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                },
+                "TitlePartSettings": {
+                  "Options": 2,
+                  "Pattern": "Import {{ ContentItem.CreatedUtc | date: \"%c\" }}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportStateItem",
+          "DisplayName": "ImportItem",
+          "Settings": {
+            "ContentTypeSettings": {},
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "ImportStateItem",
+              "Name": "ImportStateItem",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "2"
+                }
+              }
+            },
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                },
+                "TitlePartSettings": {
+                  "Options": 2,
+                  "Pattern": "{{ ContentItem.Content.ImportPart.Name.Text }}"
+                }
+              }
+            },
+            {
+              "PartName": "ImportPart",
+              "Name": "ImportPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                }
+              }
+            },
+            {
+              "PartName": "ListPart",
+              "Name": "ListPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "3"
+                },
+                "ListPartSettings": {
+                  "PageSize": 10,
+                  "ContainedContentTypes": [
+                    "ImportProgressItem"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportStart",
+          "DisplayName": "ImportStart",
+          "Settings": {
+            "ContentTypeSettings": {},
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "ImportStart",
+              "Name": "ImportStart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                }
+              }
+            },
+            {
+              "PartName": "AutoroutePart",
+              "Name": "AutoroutePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "2"
+                },
+                "AutoroutePartSettings": {
+                  "ShowHomepageOption": true
+                }
+              }
+            },
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportTaxonomy",
+          "DisplayName": "ImportTaxonomy",
+          "Settings": {
+            "ContentTypeSettings": {},
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "ImportTaxonomy",
+              "Name": "ImportTaxonomy",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "2"
+                }
+              }
+            },
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                },
+                "TitlePartSettings": {
+                  "Options": 2,
+                  "Pattern": "{{ ContentItem.Content.ImportPart.Name.Text }}"
+                }
+              }
+            },
+            {
+              "PartName": "ImportPart",
+              "Name": "ImportPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                }
+              }
+            },
+            {
+              "PartName": "ListPart",
+              "Name": "ListPart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "3"
+                },
+                "ListPartSettings": {
+                  "PageSize": 10,
+                  "ContainedContentTypes": [
+                    "ImportProgressItem"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportProgressItem",
+          "DisplayName": "ImportProgressItem",
+          "Settings": {
+            "ContentTypeSettings": {},
+            "FullTextAspectSettings": {}
+          },
+          "ContentTypePartDefinitionRecords": [
+            {
+              "PartName": "ImportProgressItem",
+              "Name": "ImportProgressItem",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "1"
+                }
+              }
+            },
+            {
+              "PartName": "TitlePart",
+              "Name": "TitlePart",
+              "Settings": {
+                "ContentTypePartSettings": {
+                  "Position": "0"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "ContentParts": [
+        {
+          "Name": "AutoroutePart",
+          "Settings": {
+            "ContentPartSettings": {
+              "Attachable": true,
+              "Description": "Provides a custom url for your content item."
+            }
+          },
+          "ContentPartFieldDefinitionRecords": []
+        },
+        {
+          "Name": "ListPart",
+          "Settings": {
+            "ContentPartSettings": {
+              "Attachable": true,
+              "Description": "Add a list behavior."
+            }
+          },
+          "ContentPartFieldDefinitionRecords": []
+        },
+        {
+          "Name": "TitlePart",
+          "Settings": {
+            "ContentPartSettings": {
+              "Attachable": true,
+              "Description": "Provides a Title for your content item.",
+              "DefaultPosition": "0"
+            }
+          },
+          "ContentPartFieldDefinitionRecords": []
+        },
+        {
+          "Name": "ImportState",
+          "Settings": {},
+          "ContentPartFieldDefinitionRecords": [
+            {
+              "FieldName": "BooleanField",
+              "Name": "Finished",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Finished",
+                  "Position": "0"
+                },
+                "BooleanFieldSettings": {}
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "Url",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Url",
+                  "Position": "2"
+                }
+              }
+            },
+            {
+              "FieldName": "MultiTextField",
+              "Name": "Type",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Type",
+                  "Editor": "CheckboxList",
+                  "Position": "1"
+                },
+                "MultiTextFieldSettings": {
+                  "Required": true,
+                  "Options": [
+                    {
+                      "name": "Categories",
+                      "value": "categories"
+                    },
+                    {
+                      "name": "Tags",
+                      "value": "tags"
+                    },
+                    {
+                      "name": "Pages",
+                      "value": "pages"
+                    },
+                    {
+                      "name": "Posts",
+                      "value": "posts"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "FieldName": "ContentPickerField",
+              "Name": "ListContentItemId",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "ListContentItemId",
+                  "Position": "3"
+                },
+                "ContentPickerFieldSettings": {
+                  "DisplayedContentTypes": [
+                    "Blog"
+                  ]
+                }
+              }
+            },
+            {
+              "FieldName": "ContentPickerField",
+              "Name": "TagsTaxonomy",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "TagsTaxonomy",
+                  "Position": "5"
+                },
+                "ContentPickerFieldSettings": {
+                  "DisplayedContentTypes": [
+                    "Taxonomy"
+                  ]
+                }
+              }
+            },
+            {
+              "FieldName": "ContentPickerField",
+              "Name": "CategoriesTaxonomy",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "CategoriesTaxonomy",
+                  "Position": "4"
+                },
+                "ContentPickerFieldSettings": {
+                  "DisplayedContentTypes": [
+                    "Taxonomy"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportStateItem",
+          "Settings": {},
+          "ContentPartFieldDefinitionRecords": [
+            {
+              "FieldName": "ContentPickerField",
+              "Name": "ListContentItemId",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "ListContentItemId",
+                  "Position": "0"
+                },
+                "ContentPickerFieldSettings": {
+                  "Required": true,
+                  "DisplayedContentTypes": [
+                    "Blog"
+                  ]
+                }
+              }
+            },
+            {
+              "FieldName": "ContentPickerField",
+              "Name": "TagsTaxonomy",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "TagsTaxonomy",
+                  "Position": "1"
+                },
+                "ContentPickerFieldSettings": {
+                  "DisplayedContentTypes": [
+                    "Taxonomy"
+                  ]
+                }
+              }
+            },
+            {
+              "FieldName": "ContentPickerField",
+              "Name": "CategoriesTaxonomy",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "CategoriesTaxonomy",
+                  "Position": "2"
+                },
+                "ContentPickerFieldSettings": {
+                  "DisplayedContentTypes": [
+                    "Taxonomy"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportTaxonomy",
+          "Settings": {},
+          "ContentPartFieldDefinitionRecords": [
+            {
+              "FieldName": "ContentPickerField",
+              "Name": "TaxonomyContentItemId",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "TaxonomyContentItemId",
+                  "Position": "0"
+                },
+                "ContentPickerFieldSettings": {
+                  "Required": true,
+                  "DisplayedContentTypes": [
+                    "Taxonomy"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportPart",
+          "Settings": {
+            "ContentPartSettings": {
+              "Attachable": true,
+              "DisplayName": "ImportCommonFields"
+            }
+          },
+          "ContentPartFieldDefinitionRecords": [
+            {
+              "FieldName": "TextField",
+              "Name": "BaseUrl",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "BaseUrl",
+                  "Editor": "Url",
+                  "Position": "2"
+                },
+                "TextFieldSettings": {
+                  "Required": true
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "InputType",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "InputType",
+                  "Position": "3"
+                },
+                "TextFieldSettings": {
+                  "Hint": "Wordpress type (posts, pages, categories, tags etc.)",
+                  "Required": true
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "Fields",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Fields",
+                  "Position": "4"
+                },
+                "TextFieldSettings": {
+                  "Required": true
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "ContentType",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "OutputType",
+                  "Position": "5"
+                },
+                "TextFieldSettings": {
+                  "Hint": "Orchard core ContentType",
+                  "Required": true
+                }
+              }
+            },
+            {
+              "FieldName": "NumericField",
+              "Name": "Page",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Page",
+                  "Position": "6"
+                }
+              }
+            },
+            {
+              "FieldName": "NumericField",
+              "Name": "PerPage",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "PerPage",
+                  "Position": "7"
+                }
+              }
+            },
+            {
+              "FieldName": "NumericField",
+              "Name": "Progress",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Progress",
+                  "Position": "1"
+                }
+              }
+            },
+            {
+              "FieldName": "TextField",
+              "Name": "Name",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Name",
+                  "Position": "0"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "Name": "ImportProgressItem",
+          "Settings": {},
+          "ContentPartFieldDefinitionRecords": [
+            {
+              "FieldName": "NumericField",
+              "Name": "Progress",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "Progress",
+                  "Position": "0"
+                }
+              }
+            },
+            {
+              "FieldName": "NumericField",
+              "Name": "TotalItems",
+              "Settings": {
+                "ContentPartFieldSettings": {
+                  "DisplayName": "TotalItems",
+                  "Position": "1"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "Templates": {
+        "Content__ImportState": {
+          "Content": "[js: `{% zone \"Header\" %}\r\n    <header class=\"masthead\" style=\"background-image: url('{{ \"~/TheBlogTheme/assets/img/home-bg.jpg\" | href }}')\">\r\n    <div class=\"container position-relative px-4 px-lg-5\">\r\n        <div class=\"row gx-4 gx-lg-5 justify-content-center\">\r\n            <div class=\"col-md-10 col-lg-8 col-xl-7\">\r\n                <div class=\"site-heading\">\r\n                    <h1>{{ Model.ContentItem.DisplayText }}</h1>\r\n\r\n                        <div class=\"card\" style=\"background-color: #ffffff60; border-radius: 10px;\">\r\n                            <div class=\"card-body\">\r\n\r\n                                <div id=\"preloader\">\r\n                                    <div class=\"d-flex flex-column align-items-center justify-content-center\">\r\n                                        <div class=\"spinner-border\" role=\"status\">\r\n                                            <span class=\"sr-only\">Loading...</span>\r\n                                        </div>\r\n                                        <div>\r\n                                            Import will start shortly, it usually takes up to 60 seconds\r\n                                        </div>\r\n                                    </div>\r\n                                </div>\r\n\r\n                                <div id=\"progress\" class=\"d-none\">\r\n                                    {% assign items = Model.ContentItem | list_items %}\r\n                                    {% for item in items %}\r\n                                        <div>\r\n                                            {{ item | shape_build_display: \"Summary\" | shape_render}}\r\n                                        </div>\r\n                                    {% endfor %}\r\n                                </div>\r\n\r\n                                <ul id=\"finished\" class=\"d-none list-group\">\r\n                                    <li class=\"list-group-item active\">Import result</li>\r\n                                </ul>\r\n                                \r\n                            </div>\r\n                        </div>\r\n\r\n                </div>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</header>\r\n{% endzone %}\r\n\r\n{% unless Model.ContentItem.Content.Finished %}\r\n    {% scriptblock at: \"Foot\" %}\r\n        const addProgressBar = function(parent, item) {\r\n            const container = document.createElement(\"div\");\r\n            container.innerHTML = ` + '`' + '<div><div>${item.Title}</div><div class=\"progress\"><div data-content-item-id=\"${item.ContentItemId}\" class=\"progress-bar progress-bar-striped progress-bar-animated\" role=\"progressbar\" aria-valuenow=\"${item.Progress}\" aria-valuemin=\"0\" aria-valuemax=\"100\" style=\"width: ${item.Progress}%;\"></div></div></div>' + '`' + `;\r\n            parent.appendChild(container);\r\n        };\r\n\r\n        const addResult = function(parent, item) {\r\n            const container = document.createElement(\"li\");\r\n            container.classList.add(\"list-group-item\");\r\n            container.innerHTML = ` + '`' + 'Imported ${item.Title} : <b>${item.TotalItems}</b>' + '`' + `;\r\n            parent.appendChild(container);\r\n        };\r\n\r\n        const refresh = function() {\r\n            fetch(\"` + variables('GetImportProgress_Url') + `\")\r\n                .then(response => response.json())\r\n                .then(data => {\r\n                    var overallProgress = 0;\r\n                    const progressContainer = document.getElementById(\"progress\");\r\n                    data.items.forEach(function (item, index) {\r\n                        const progress = item.Progress;\r\n                        overallProgress += progress;\r\n                        const el = document.querySelector(` + '`' + 'div[data-content-item-id=\"${item.ContentItemId}\"]' + '`' + `);\r\n                        if (el) {\r\n                            el.style.width = ` + '`' + '${progress}%' + '`' + `;\r\n                            el.ariaValueNow = ` + '`' + '${progress}' + '`' + `;\r\n                        } else if (item.ContentItemId) {\r\n                            addProgressBar(progressContainer, item);\r\n                        }\r\n                    });\r\n                    overallProgress = data.items.length == 0 ? 0 : overallProgress / data.items.length;\r\n                    if (overallProgress > 0) {\r\n                        document.getElementById(\"preloader\").classList.add(\"d-none\");\r\n                        document.getElementById(\"progress\").classList.remove(\"d-none\");\r\n                    }\r\n                    if (data.status === \"starting\") {\r\n                        setTimeout(refresh, 10*1000);\r\n                    } else if (data.status === \"inProgress\") {\r\n                        setTimeout(refresh, 1000);\r\n                    } else if (data.status === \"finished\") {\r\n                        document.getElementById(\"preloader\").classList.add(\"d-none\");\r\n                        document.getElementById(\"progress\").classList.add(\"d-none\");\r\n                        document.getElementById(\"finished\").classList.remove(\"d-none\");\r\n                        const resultContainer = document.getElementById(\"finished\");\r\n                        data.items.forEach(function (item, index) {\r\n                            addResult(resultContainer, item);\r\n                        });\r\n                    }\r\n                });\r\n        };\r\n\r\n        window.addEventListener(\"DOMContentLoaded\", function() {\r\n            refresh();\r\n        }, false);\r\n    {% endscriptblock %}\r\n{% endunless %}\r\n\r\n{% styleblock at: \"Foot\" %}\r\n    #finished > li:first-child {\r\n        border-radius: 10px 10px 0px 0px;\r\n    }\r\n    #finished > li:last-child {\r\n        border-radius: 0px 0px 10px 10px;\r\n    }\r\n{% endstyleblock %}`]",
+          "Description": null
+        },
+        "Content_Summary__ImportStateItem": {
+          "Content": "{% assign valueNow = Model.ImportPart.Progress.Value %}\r\n{% assign contentItemId = Model.ContentItem.ContentItemId %}\r\n<div>{{ Model.ContentItem | display_text }}</div>\r\n<div class=\"progress\">\r\n    <div data-content-item-id=\"{{ contentItemId }}\" class=\"progress-bar progress-bar-striped progress-bar-animated\" \r\n        role=\"progressbar\" aria-valuenow=\"{{ valueNow }}\" aria-valuemin=\"0\" \r\n        aria-valuemax=\"100\" style=\"width: {{ valueNow }}%\"></div>\r\n</div>",
+          "Description": null
+        },
+        "Content__ImportStart": {
+          "Content": "[js: `{% assign isAdmin = User | is_in_role:\"Administrator\" %}\r\n{% zone \"Header\" %}\r\n    <header class=\"masthead\" style=\"background-image: url('{{ \"~/TheBlogTheme/assets/img/home-bg.jpg\" | href }}')\">\r\n    <div class=\"container position-relative px-4 px-lg-5\">\r\n        <div class=\"row gx-4 gx-lg-5 justify-content-center\">\r\n            <div class=\"col-md-10 col-lg-8 col-xl-7\">\r\n                <div class=\"site-heading\">\r\n                    {% if isAdmin %}\r\n                        <h1>{{ Model.ContentItem.DisplayText }}</h1>\r\n                        <form action=\"` + variables('PostStartImport_Url') +`\" method=\"post\">\r\n                            <div class=\"form-row\">\r\n                                <div class=\"form-group\">\r\n                                    <label for=\"wordpressBlogUrl\">Blog url</label>\r\n                                    <input type=\"url\" class=\"form-control\" id=\"wordpressBlogUrl\" name=\"url\" placeholder=\"https://your-blog-url-here.com/wp-json/wp/v2/\">\r\n                                </div>\r\n                            </div>\r\n                            <div class=\"form-row\">\r\n                                <div class=\"form-check form-check-inline\">\r\n                                    <input class=\"form-check-input\" type=\"checkbox\" id=\"tags\" name=\"what\" value=\"tags\">\r\n                                    <label class=\"form-check-label\" for=\"tags\">Tags</label>\r\n                                </div>\r\n                                <div class=\"form-check form-check-inline\">\r\n                                    <input class=\"form-check-input\" type=\"checkbox\" id=\"categories\" name=\"what\" value=\"categories\">\r\n                                    <label class=\"form-check-label\" for=\"categories\">Categories</label>\r\n                                </div>\r\n                                <div class=\"form-check form-check-inline\">\r\n                                    <input class=\"form-check-input\" type=\"checkbox\" id=\"pages\" name=\"what\" value=\"pages\">\r\n                                    <label class=\"form-check-label\" for=\"pages\">Pages</label>\r\n                                </div>\r\n                                <div class=\"form-check form-check-inline\">\r\n                                    <input class=\"form-check-input\" type=\"checkbox\" id=\"posts\" name=\"what\" value=\"posts\">\r\n                                    <label class=\"form-check-label\" for=\"posts\">Posts</label>\r\n                                </div>\r\n                            </div>\r\n                            <div class=\"form-row\">\r\n                                <div class=\"col\">\r\n                                    <button type=\"submit\" class=\"btn btn-primary mb-2\">Begin import</button>\r\n                                </div>\r\n                            </div>\r\n                            {% antiforgerytoken %}\r\n                        </form>\r\n                    {% else %}\r\n                        <div>Only user with \"Administrator\" role can perform import!</div>\r\n                    {% endif %}\r\n                </div>\r\n            </div>\r\n        </div>\r\n    </div>\r\n</header>\r\n{% endzone %}`]",
+          "Description": null
+        },
+        "Content_Summary__ImportTaxonomy": {
+          "Content": "{% assign valueNow = Model.ImportPart.Progress.Value %}\r\n{% assign contentItemId = Model.ContentItem.ContentItemId %}\r\n<div>{{ Model.ContentItem | display_text }}</div>\r\n<div class=\"progress\">\r\n    <div data-content-item-id=\"{{ contentItemId }}\" class=\"progress-bar progress-bar-striped progress-bar-animated\" \r\n        role=\"progressbar\" aria-valuenow=\"{{ valueNow }}\" aria-valuemin=\"0\" \r\n        aria-valuemax=\"100\" style=\"width: {{ valueNow }}%\"></div>\r\n</div>",
+          "Description": null
+        },
+        "Content__BlogPost": {
+          "Content": "{% zone \"Header\" %}\r\n    <!-- Page Header -->\r\n    <!-- Set your background image for this header on the line below. -->\r\n    {% assign imagePath = Model.ContentItem.Content.BlogPost.Image.Paths.first %}\r\n    {% if imagePath == nil %}\r\n        <header class=\"masthead\" style=\"background-image: url('{{ \"~/TheBlogTheme/assets/img/post-bg.jpg\" | href }}')\">\r\n    {% else %}\r\n        {% assign anchor = Model.ContentItem.Content.BlogPost.Image.Anchors.first %}\r\n        <header class=\"masthead\" style=\"background-image: url('{{ imagePath | asset_url | resize_url: profile:\"banner\", anchor: anchor }}')\">\r\n    {% endif %}\r\n        <div class=\"container position-relative px-4 px-lg-5\">\r\n            <div class=\"row gx-4 gx-lg-5 justify-content-center\">\r\n                <div class=\"col-md-10 col-lg-8 col-xl-7\">\r\n                    <div class=\"post-heading\">\r\n                        <h1>{{ Model.ContentItem.DisplayText | liquid }}</h1>\r\n                        <h2 class=\"subheading\">{{ Model.ContentItem.Content.BlogPost.Subtitle.Text }}</h2>\r\n                        <span class=\"meta\">\r\n                            {% assign format = \"MMMM dd, yyyy\" | t %}\r\n                            {% assign dateTime = \"DateTime\" | shape_new: utc: Model.ContentItem.CreatedUtc, format: format | shape_stringify %}\r\n                            {{ \"Posted by\" | t }} <a href=\"#\">{{ Model.ContentItem.Author }}</a> {{ \"on {0}\" | t: dateTime | raw }}\r\n                        </span>\r\n                    </div>\r\n                </div>\r\n            </div>\r\n        </div>\r\n    </header>\r\n{% endzone %}\r\n\r\n{{ Model.Content.ContentsMetadata | shape_render }}\r\n{{ Model.Content.HtmlBodyPart | shape_render }}\r\n{{ Model.Content.BlogPost-Category | shape_render }}\r\n{{ Model.Content.BlogPost-Tags | shape_render }}\r\n\r\n{% styleblock at: \"Foot\" %}\r\n    figure > img {\r\n        height: 100%;\r\n        width: 100%;\r\n    }\r\n{% endstyleblock %}",
+          "Description": null
+        },
+        "Content_Summary__BlogPost": {
+          "Content": "<div class=\"post-preview\">\r\n    {% a display_for:Model.ContentItem %}\r\n        <h2 class=\"post-title\">\r\n            {{ Model.ContentItem.DisplayText | liquid }}\r\n        </h2>\r\n        <h3 class=\"post-subtitle\">\r\n            {{ Model.ContentItem.Content.BlogPost.Subtitle.Text }}\r\n        </h3>\r\n    {% enda %}\r\n    <p class=\"post-meta\">\r\n        {% assign format = \"MMMM dd, yyyy\" | t %}\r\n        {% assign dateTime = \"DateTime\" | shape_new: utc: Model.ContentItem.CreatedUtc, format: format | shape_stringify %}\r\n        {{ \"Posted by\" | t }} <a href=\"#\">{{ Model.ContentItem.Author }}</a> {{ \"on {0}\" | t: dateTime | raw }}\r\n  \r\n        <span class=\"term-badge\">\r\n            {% assign categoryTerms = Model.ContentItem.Content.BlogPost.Category | taxonomy_terms %}\r\n            {% for categoryTerm in categoryTerms %}\r\n                {% a display_for:categoryTerm %}\r\n                    <span class=\"badge bg-secondary\">\r\n                        <i class=\"{{ categoryTerm.Content.Category.Icon.Text }} fa-xs align-middle\"></i>\r\n                        <span class=\"align-middle\">{{ categoryTerm.DisplayText }}</span>\r\n                    </span>\r\n                {% enda %}\r\n            {% endfor %}\r\n\r\n            {% assign tagTerms = Model.ContentItem.Content.BlogPost.Tags | taxonomy_terms %}\r\n            {% for tagTerm in tagTerms %}\r\n                {% a display_for:tagTerm %}\r\n                    <span class=\"badge bg-secondary\">\r\n                        <i class=\"fas fa-tag fa-xs fa-rotate-90 align-middle\" aria-hidden=\"true\"></i>\r\n                        <span class=\"align-middle\">{{ tagTerm.DisplayText }}</span> \r\n                    </span>\r\n                {% enda %}\r\n            {% endfor %}\r\n        </span>\r\n    </p>\r\n</div>\r\n<hr class=\"my-4\" />\r\n",
+          "Description": null
+        }
+      }
+    },
+    {
+      "name": "content",
+      "data": [
+        {
+          "ContentItemId": "4qq2yhxrva8yb1ntjxzrmqsaxs",
+          "ContentItemVersionId": "4jh7a229f9w8m2s64dmr7sqedj",
+          "ContentType": "ImportStart",
+          "DisplayText": "Import blog",
+          "Latest": true,
+          "Published": true,
+          "ModifiedUtc": "2022-04-26T16:36:46.003226Z",
+          "PublishedUtc": "2022-04-26T16:36:46.017644Z",
+          "CreatedUtc": "2022-04-26T15:02:52.204666Z",
+          "Owner": "4rbsxme30m7cvv9n3kzbb26cxn",
+          "Author": "admin",
+          "ImportStart": {},
+          "AutoroutePart": {
+            "Path": "import-blog",
+            "SetHomepage": false,
+            "Disabled": false,
+            "RouteContainedItems": false,
+            "Absolute": false
+          },
+          "TitlePart": {
+            "Title": "Import blog"
+          }
+        }
+      ]
+    }
+  ]
+}
